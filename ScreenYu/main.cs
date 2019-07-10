@@ -38,7 +38,7 @@ namespace ScreenYu {
         [DllImport("User32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
         private const int WM_HOTKEY = 0x0312;
-        private enum ModifierKeys {
+        private new enum ModifierKeys {
             MOD_ALT = 0x0001,
             MOD_CONTROL = 0x0002,
             MOD_NOREPEAT = 0x4000,
@@ -48,12 +48,10 @@ namespace ScreenYu {
 
         private capture captureForm;
         private Bitmap memoryImage;
-        private Graphics memoryGraphics;
 
         public main() {
             InitializeComponent();
-            //this.Size = Screen.PrimaryScreen.Bounds.Size;
-            //this.Opacity = 0;
+            
             if (!RegisterHotKey(this.Handle, 0,
                 (UInt32)ModifierKeys.MOD_CONTROL | (UInt32)ModifierKeys.MOD_ALT, (UInt32)Keys.A)) {
                 MessageBox.Show("Unable to register for hotkey: Ctrl-Alt-A !", "Error");
@@ -72,11 +70,6 @@ namespace ScreenYu {
         }
 
         private void getScreenShot() {
-            
-            /*memoryGraphics = Graphics.FromImage(memoryImage);
-            memoryGraphics.CopyFromScreen(new Point(0, 0), new Point(0, 0),
-                new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height), CopyPixelOperation.SourceCopy);
-            */
 
             int cx, cy;
             cx = Screen.PrimaryScreen.Bounds.Width;
@@ -107,12 +100,7 @@ namespace ScreenYu {
                         if ((int)m.LParam >> 16 == (int)Keys.A) {
                             IntPtr fg_hWnd = GetForegroundWindow();
                             getScreenShot();
-                            //Clipboard.SetImage(memoryImage);
-                            //pictureBox1.Image = memoryImage;
-                            //this.Opacity = 1;
-                            //MessageBox.Show("");
                             
-                            //this.Hide();
                             captureForm.Cursor = Cursors.Cross;
                             captureForm.showSelectForm(memoryImage, fg_hWnd, this);
                             SetForegroundWindow(captureForm.Handle);
@@ -125,39 +113,10 @@ namespace ScreenYu {
             base.WndProc(ref m);
         }
 
-        private void main_Load(object sender, EventArgs e) {
-            
-            //this.Hide();
-            //this.Visible = true;
-            
-        }
-
-        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e) {
-            
-            //this.Show();
-            //this.WindowState = FormWindowState.Normal;
-        }
-
-        /*protected override CreateParams CreateParams {
-            get {
-                //base.Visible = false;
-                
-                return base.CreateParams;
-            }
-        }*/
-
-        /*protected override void SetVisibleCore(bool value) {
-            base.SetVisibleCore(this.Visible);
-        }*/
-
         protected override bool ShowWithoutActivation {
             get {
                 return true;
             }
-        }
-
-        private void button1_Click(object sender, EventArgs e) {
-            this.Hide();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
