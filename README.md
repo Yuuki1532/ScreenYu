@@ -6,8 +6,3 @@
 - resizable selection
 - `esc` to quit capture mode
 - `right click` to copy the selection
-
-## Todo
-
-- exception handling
-- boundary checking

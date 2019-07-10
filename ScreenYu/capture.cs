@@ -42,7 +42,7 @@ namespace ScreenYu {
             dimBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0));
             selectionRect = new Rectangle();
         }
-
+        
         protected override void OnPaint(PaintEventArgs e) {
             if (screenShot == null) return;
 
@@ -187,16 +187,39 @@ namespace ScreenYu {
                         y2 = e.Y;
                     }
                     else if (currentCP == ControlPoints.Inside) {
-                        x1 += e.X - old_x;
-                        y1 += e.Y - old_y;
-                        x2 += e.X - old_x;
-                        y2 += e.Y - old_y;
+                        int dx, dy, minX, minY, maxX, maxY;
+                        dx = e.X - old_x;
+                        dy = e.Y - old_y;
+                        minX = Math.Min(x1, x2);
+                        minY = Math.Min(y1, y2);
+                        maxX = Math.Max(x1, x2);
+                        maxY = Math.Max(y1, y2);
+
+                        if (minX + dx < 0) {
+                            dx = -minX;
+                        }
+                        else if (maxX + dx >= screenShot.Width) {
+                            dx = screenShot.Width - maxX - 1;
+                        }
+
+                        if (minY + dy < 0) {
+                            dy = -minY;
+                        }
+                        else if (maxY + dy >= screenShot.Height) {
+                            dy = screenShot.Height - maxY - 1;
+                        }
+
+                        x1 += dx;
+                        y1 += dy;
+                        x2 += dx;
+                        y2 += dy;
                         old_x = e.X;
                         old_y = e.Y;
                     }
 
 
                 }
+                this.Refresh();
             }
 
 
@@ -211,14 +234,18 @@ namespace ScreenYu {
 
             
 
-            this.Refresh();
+            //this.Refresh();
 
         }
 
         private void capture_MouseUp(object sender, MouseEventArgs e) {
             isClicking = false;
 
-            
+            if (x1 == x2 || y1 == y2) {
+                x1 = -1;
+                this.Refresh();
+            }
+
             //x1 = x2 = y1 = y2 = -1;
             //x1 = -1;
             
