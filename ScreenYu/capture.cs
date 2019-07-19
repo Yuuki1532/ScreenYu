@@ -288,7 +288,7 @@ namespace ScreenYu {
         private ControlPoints getControlPoint(int mouseX, int mouseY) {
             int minX, minY, maxX, maxY;
             int d_minX, d_minY, d_maxX, d_maxY;
-            bool isInside;
+            bool isInside, isInsideHeightSens, isInsideWidthSens;
 
             minX = Math.Min(x1, x2);
             minY = Math.Min(y1, y2);
@@ -300,6 +300,8 @@ namespace ScreenYu {
             d_maxX = Math.Abs(mouseX - maxX);
             d_maxY = Math.Abs(mouseY - maxY);
             isInside = (mouseX > minX && mouseX < maxX && mouseY > minY && mouseY < maxY);
+            isInsideWidthSens = (mouseX >= minX - CP_SENSITIVITY && mouseX <= maxX + CP_SENSITIVITY);
+            isInsideHeightSens = (mouseY >= minY - CP_SENSITIVITY && mouseY <= maxY + CP_SENSITIVITY);
 
             if (d_maxX <= CP_SENSITIVITY && d_maxY <= CP_SENSITIVITY) { // right bottom
                 this.Cursor = Cursors.SizeNWSE;
@@ -317,19 +319,19 @@ namespace ScreenYu {
                 this.Cursor = Cursors.SizeNWSE;
                 return ControlPoints.LeftTop;
             }
-            else if (d_maxX <= CP_SENSITIVITY) { // right
+            else if (isInsideHeightSens && d_maxX <= CP_SENSITIVITY) { // right
                 this.Cursor = Cursors.SizeWE;
                 return ControlPoints.Right;
             }
-            else if (d_maxY <= CP_SENSITIVITY) { // bottom
+            else if (isInsideWidthSens && d_maxY <= CP_SENSITIVITY) { // bottom
                 this.Cursor = Cursors.SizeNS;
                 return ControlPoints.Bottom;
             }
-            else if (d_minX <= CP_SENSITIVITY) { // left
+            else if (isInsideHeightSens && d_minX <= CP_SENSITIVITY) { // left
                 this.Cursor = Cursors.SizeWE;
                 return ControlPoints.Left;
             }
-            else if (d_minY <= CP_SENSITIVITY) { // top
+            else if (isInsideWidthSens && d_minY <= CP_SENSITIVITY) { // top
                 this.Cursor = Cursors.SizeNS;
                 return ControlPoints.Top;
             }
