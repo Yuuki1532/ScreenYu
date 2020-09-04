@@ -11,8 +11,6 @@ using System.Runtime.InteropServices;
 namespace ScreenYu {
     public partial class capture : Form {
 
-        [DllImport("User32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         private enum ControlPoints {
             None,
@@ -273,7 +271,7 @@ namespace ScreenYu {
 
             this.Hide();
             if (old_hWnd != IntPtr.Zero)
-                SetForegroundWindow(old_hWnd);
+                WinAPI.SetForegroundWindow(old_hWnd);
             
             //this.Owner.Show();
         
