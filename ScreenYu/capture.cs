@@ -11,6 +11,13 @@ using System.Runtime.InteropServices;
 namespace ScreenYu {
     public partial class capture : Form {
 
+        private struct RectFrame {
+            public int x1, y1, x2, y2;
+        }
+        private List<RectFrame> rectFrameList;
+        private Pen rectFramePen;
+        private Keys rectFrameKey = Keys.F; // press F to enter / leave rect frame drawing mode
+        private bool isDrawingRectFrame = false;
 
         private enum ControlPoints {
             None,
@@ -25,6 +32,7 @@ namespace ScreenYu {
         private int x1 = -1, y1 = -1, x2 = -1, y2 = -1, old_x, old_y;
         private bool isClicking = false;
         private Pen selectionPen;
+        private Pen drawingModePen;
         private Brush dimBrush;
         private Rectangle selectionRect;
         private ControlPoints currentCP = ControlPoints.None;
@@ -39,6 +47,10 @@ namespace ScreenYu {
             selectionPen.Alignment = System.Drawing.Drawing2D.PenAlignment.Center;
             dimBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0));
             selectionRect = new Rectangle();
+
+            rectFrameList = new List<RectFrame>();
+            rectFramePen = new Pen(Color.FromArgb(255, 160, 0), 2.0f);
+            drawingModePen = new Pen(Color.FromArgb(225, 20, 20), 1.5f);
         }
         
         protected override void OnPaint(PaintEventArgs e) {
@@ -57,12 +69,23 @@ namespace ScreenYu {
                 selectionRect.Height = Math.Abs(y2 - y1) + 1;
 
                 g.DrawImage(screenShot, selectionRect, selectionRect, GraphicsUnit.Pixel);
+                
+                Pen borderPen;
+                if (isDrawingRectFrame)
+                    borderPen = drawingModePen;
+                else
+                    borderPen = selectionPen;
 
-                g.DrawRectangle(selectionPen,
+                g.DrawRectangle(borderPen,
                     Math.Min(x1, x2), Math.Min(y1, y2), Math.Abs(x2 - x1), Math.Abs(y2 - y1));
+
+                foreach (RectFrame frame in rectFrameList) {
+                    g.DrawRectangle(rectFramePen,
+                        Math.Min(frame.x1, frame.x2), Math.Min(frame.y1, frame.y2),
+                        Math.Abs(frame.x2 - frame.x1), Math.Abs(frame.y2 - frame.y1));
+                }
                 
-                
-                
+
             }
 
 
@@ -74,89 +97,146 @@ namespace ScreenYu {
         private void capture_KeyDown(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.Escape) {
                 abortClip();
-                
+                return;
             }
+
+            if (e.KeyCode == rectFrameKey) {
+                if (x1 == -1)
+                    return;
+                if (isClicking)
+                    return;
+                isDrawingRectFrame = !isDrawingRectFrame;
+                if (isDrawingRectFrame)
+                    this.Cursor = Cursors.Cross;
+                else
+                    this.Cursor = Cursors.SizeAll;
+                this.Refresh();
+                return;
+            }
+
+            if (e.Control && e.KeyCode == Keys.Z){
+                if (isClicking)
+                    return;
+                if (rectFrameList.Count == 0)
+                    return;
+                rectFrameList.RemoveAt(rectFrameList.Count - 1);
+                this.Refresh();
+            }
+
         }
 
         private void capture_MouseDown(object sender, MouseEventArgs e) {
             int tx1, ty1, tx2, ty2;
 
-            if (e.Button == System.Windows.Forms.MouseButtons.Left) {
+            if (e.Button == MouseButtons.Left) {
                 isClicking = true;
 
-                switch (currentCP) {
-                    case ControlPoints.None: // first/re select
-                        x1 = x2 = old_x = e.X;
-                        y1 = y2 = old_y = e.Y;
-                        break;
-                    case ControlPoints.Top:
-                    case ControlPoints.Left:
-                    case ControlPoints.LeftTop: // modifying selection
-                        tx2 = Math.Min(x1, x2);
-                        ty2 = Math.Min(y1, y2);
-                        tx1 = Math.Max(x1, x2);
-                        ty1 = Math.Max(y1, y2);
-                        x1 = tx1;
-                        y1 = ty1;
-                        x2 = tx2;
-                        y2 = ty2;
-                        break;
-                    case ControlPoints.Bottom:
-                    case ControlPoints.Right:
-                    case ControlPoints.RightBottom:
-                        tx2 = Math.Max(x1, x2);
-                        ty2 = Math.Max(y1, y2);
-                        tx1 = Math.Min(x1, x2);
-                        ty1 = Math.Min(y1, y2);
-                        x1 = tx1;
-                        y1 = ty1;
-                        x2 = tx2;
-                        y2 = ty2;
-                        break;
-                    case ControlPoints.LeftBottom:
-                        tx2 = Math.Min(x1, x2);
-                        ty2 = Math.Max(y1, y2);
-                        tx1 = Math.Max(x1, x2);
-                        ty1 = Math.Min(y1, y2);
-                        x1 = tx1;
-                        y1 = ty1;
-                        x2 = tx2;
-                        y2 = ty2;
-                        break;
-                    case ControlPoints.RightTop:
-                        tx2 = Math.Max(x1, x2);
-                        ty2 = Math.Min(y1, y2);
-                        tx1 = Math.Min(x1, x2);
-                        ty1 = Math.Max(y1, y2);
-                        x1 = tx1;
-                        y1 = ty1;
-                        x2 = tx2;
-                        y2 = ty2;
-                        break;
-                    case ControlPoints.Inside:
-                        old_x = e.X;
-                        old_y = e.Y;
-                        break;
+                if (isDrawingRectFrame) {
+                    if (e.X < Math.Min(x1, x2) || e.X > Math.Max(x1, x2) || e.Y < Math.Min(y1, y2) || e.Y > Math.Max(y1, y2)) {
+                        // start position out of range, cancel current clicking
+                        isClicking = false;
+                        return;
+                    }
+                    RectFrame frame = new RectFrame();
+                    frame.x1 = e.X;
+                    frame.y1 = e.Y;
+                    rectFrameList.Add(frame);
+                }
+                else {
+
+                    switch (currentCP) {
+                        case ControlPoints.None: // first/re select
+                            rectFrameList.Clear();
+                            x1 = x2 = old_x = e.X;
+                            y1 = y2 = old_y = e.Y;
+                            break;
+                        case ControlPoints.Top:
+                        case ControlPoints.Left:
+                        case ControlPoints.LeftTop: // modifying selection
+                            tx2 = Math.Min(x1, x2);
+                            ty2 = Math.Min(y1, y2);
+                            tx1 = Math.Max(x1, x2);
+                            ty1 = Math.Max(y1, y2);
+                            x1 = tx1;
+                            y1 = ty1;
+                            x2 = tx2;
+                            y2 = ty2;
+                            break;
+                        case ControlPoints.Bottom:
+                        case ControlPoints.Right:
+                        case ControlPoints.RightBottom:
+                            tx2 = Math.Max(x1, x2);
+                            ty2 = Math.Max(y1, y2);
+                            tx1 = Math.Min(x1, x2);
+                            ty1 = Math.Min(y1, y2);
+                            x1 = tx1;
+                            y1 = ty1;
+                            x2 = tx2;
+                            y2 = ty2;
+                            break;
+                        case ControlPoints.LeftBottom:
+                            tx2 = Math.Min(x1, x2);
+                            ty2 = Math.Max(y1, y2);
+                            tx1 = Math.Max(x1, x2);
+                            ty1 = Math.Min(y1, y2);
+                            x1 = tx1;
+                            y1 = ty1;
+                            x2 = tx2;
+                            y2 = ty2;
+                            break;
+                        case ControlPoints.RightTop:
+                            tx2 = Math.Max(x1, x2);
+                            ty2 = Math.Min(y1, y2);
+                            tx1 = Math.Min(x1, x2);
+                            ty1 = Math.Max(y1, y2);
+                            x1 = tx1;
+                            y1 = ty1;
+                            x2 = tx2;
+                            y2 = ty2;
+                            break;
+                        case ControlPoints.Inside:
+                            old_x = e.X;
+                            old_y = e.Y;
+                            break;
+                    }
+
+
                 }
 
-                
             }
-            else if (e.Button == System.Windows.Forms.MouseButtons.Right) {
+            else if (e.Button == MouseButtons.Right) {
 
                 if (x1 != -1) {
                     commitClip();
-                    
+
                 }
-            
+
             }
         }
 
         private void capture_MouseMove(object sender, MouseEventArgs e) {
 
-            
 
-            if (isClicking){
-                if (currentCP == ControlPoints.None) { // first/re select
+
+            if (isClicking) {
+                if (isDrawingRectFrame) {
+                    RectFrame frame = rectFrameList[rectFrameList.Count - 1];
+                    if (e.X < Math.Min(x1, x2))
+                        frame.x2 = Math.Min(x1, x2);
+                    else if (e.X > Math.Max(x1, x2))
+                        frame.x2 = Math.Max(x1, x2);
+                    else
+                        frame.x2 = e.X;
+
+                    if (e.Y < Math.Min(y1, y2))
+                        frame.y2 = Math.Min(y1, y2);
+                    else if (e.Y > Math.Max(y1, y2))
+                        frame.y2 = Math.Max(y1, y2);
+                    else
+                        frame.y2 = e.Y;
+                    rectFrameList[rectFrameList.Count - 1] = frame;
+                }
+                else if (currentCP == ControlPoints.None) { // first/re select
                     /*x2 += e.X - old_x;
                     y2 += e.Y - old_y;
                     old_x = e.X;
@@ -173,7 +253,7 @@ namespace ScreenYu {
                         x2 = e.X;
                         y2 = e.Y;
                     }
-                    
+
                     else if (currentCP == ControlPoints.Left ||
                             currentCP == ControlPoints.Right) {
 
@@ -219,18 +299,21 @@ namespace ScreenYu {
                 }
                 this.Refresh();
             }
+            else { // mouse left button not clicking
 
 
+                //check if mouse clicked on control points
+                if (!isDrawingRectFrame && x1 != -1) { // not possible to clicked on cp if no selections yet
+                    currentCP = getControlPoint(e.X, e.Y);
+                }
 
-            //check if mouse clicked on control points
-            if (!isClicking && x1 != -1) { // not possible to clicked on cp if no selections yet
-
-                currentCP = getControlPoint(e.X, e.Y);
 
             }
-            
 
-            
+
+
+
+
 
             //this.Refresh();
 
@@ -258,6 +341,19 @@ namespace ScreenYu {
                 return;
             }
 
+
+
+            using (Graphics g = Graphics.FromImage(screenShot)) {
+
+                foreach (RectFrame frame in rectFrameList) {
+                    g.DrawRectangle(rectFramePen,
+                        Math.Min(frame.x1, frame.x2), Math.Min(frame.y1, frame.y2),
+                        Math.Abs(frame.x2 - frame.x1), Math.Abs(frame.y2 - frame.y1));
+                }
+
+            }
+            
+
             Clipboard.SetImage(screenShot.Clone(
                 new Rectangle(Math.Min(x1, x2), Math.Min(y1, y2),
                     Math.Abs(x2 - x1) + 1, Math.Abs(y2 - y1) + 1), screenShot.PixelFormat));
@@ -266,9 +362,8 @@ namespace ScreenYu {
         }
 
         private void abortClip() {
-            x1 = -1;
-            currentCP = ControlPoints.None;
 
+            screenShot.Dispose();
             this.Hide();
             if (old_hWnd != IntPtr.Zero)
                 WinAPI.SetForegroundWindow(old_hWnd);
@@ -278,6 +373,11 @@ namespace ScreenYu {
         }
 
         public void showSelectForm(Bitmap b, IntPtr fg_hWnd, IWin32Window owner) {
+            x1 = -1;
+            currentCP = ControlPoints.None;
+            isDrawingRectFrame = false;
+            rectFrameList.Clear();
+
             screenShot = b;
             old_hWnd = fg_hWnd;
             this.Show(owner);
