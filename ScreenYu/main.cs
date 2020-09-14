@@ -55,6 +55,15 @@ namespace ScreenYu {
 
         }
 
+        private void startCapture() {
+            IntPtr fg_hWnd = WinAPI.GetForegroundWindow();
+            getScreenShot();
+
+            captureForm.Cursor = Cursors.Cross;
+            captureForm.showSelectForm(memoryImage, fg_hWnd, this);
+            WinAPI.SetForegroundWindow(captureForm.Handle);
+        }
+
         protected override void WndProc(ref Message m) {
 
             switch (m.Msg) {
@@ -64,13 +73,9 @@ namespace ScreenYu {
                     if (((int)m.LParam & 0x0000FFFF) ==
                         ((int)WinAPI.ModifierKeys.MOD_CONTROL | (int)WinAPI.ModifierKeys.MOD_ALT)) {
                         if ((int)m.LParam >> 16 == (int)Keys.A) {
-                            IntPtr fg_hWnd = WinAPI.GetForegroundWindow();
-                            getScreenShot();
-                            
-                            captureForm.Cursor = Cursors.Cross;
-                            captureForm.showSelectForm(memoryImage, fg_hWnd, this);
-                            WinAPI.SetForegroundWindow(captureForm.Handle);
-                            
+                            startCapture();
+
+
                         }
                     }
 
@@ -88,8 +93,10 @@ namespace ScreenYu {
         private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
             this.Close();
         }
-        
 
+        private void notifyIcon1_MouseClick(object sender, MouseEventArgs e) {
+            startCapture();
+        }
     }
     
 }
