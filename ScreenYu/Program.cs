@@ -12,7 +12,7 @@ namespace ScreenYu {
         /// </summary>
         [STAThread]
         static void Main() {
-            SetProcessDPIAware();
+            // SetProcessDPIAware();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             new Main();
