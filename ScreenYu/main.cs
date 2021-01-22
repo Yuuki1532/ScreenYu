@@ -6,75 +6,51 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 
 namespace ScreenYu {
-    public partial class main : Form {
+    public partial class Main : Form {
 
 
-        private capture captureForm;
-        private Bitmap memoryImage;
+        private Capture captureForm;
+        private Bitmap memoryImage; // reuse memory
 
-        public main() {
+        public Main() {
             InitializeComponent();
-            
-            if (!WinAPI.RegisterHotKey(this.Handle, 0,
-                (UInt32)WinAPI.ModifierKeys.MOD_CONTROL | (UInt32)WinAPI.ModifierKeys.MOD_ALT, (UInt32)Keys.A)) {
+
+            // Register hotkey to Windows
+            if (!Utils.RegisterHotKey(this.Handle, 0,
+                    (UInt32)Utils.WinAPI_ModifierKeys.MOD_CONTROL | (UInt32)Utils.WinAPI_ModifierKeys.MOD_ALT, (UInt32)Keys.A)) {
                 MessageBox.Show("Unable to register for hotkey: Ctrl-Alt-A !", "Error");
                 Environment.Exit(-1);
             }
+
             memoryImage = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
-            captureForm = new capture();
+            captureForm = new Capture();
 
             notifyIcon1.Visible = true;
             
         }
 
-        private void main_FormClosed(object sender, FormClosedEventArgs e) {
-            WinAPI.UnregisterHotKey(this.Handle, 0);
+        private void Main_FormClosed(object sender, FormClosedEventArgs e) {
+            Utils.UnregisterHotKey(this.Handle, 0);
             Application.Exit();
         }
 
-        private void getScreenShot() {
-
-            int cx, cy;
-            cx = Screen.PrimaryScreen.Bounds.Width;
-            cy = Screen.PrimaryScreen.Bounds.Height;
-
-            IntPtr hdcSrc = WinAPI.GetDC(IntPtr.Zero);
-            IntPtr hdcDest = WinAPI.CreateCompatibleDC(hdcSrc);
-            IntPtr hBitmap = WinAPI.CreateCompatibleBitmap(hdcSrc, cx, cy);
-            IntPtr hOld = WinAPI.SelectObject(hdcDest, hBitmap);
-            WinAPI.BitBlt(hdcDest, 0, 0, cx, cy, hdcSrc, 0, 0, (UInt32)System.Drawing.CopyPixelOperation.SourceCopy);
-            WinAPI.SelectObject(hdcDest, hOld);
-            WinAPI.DeleteDC(hdcDest);
-            WinAPI.ReleaseDC(IntPtr.Zero, hdcSrc);
-            memoryImage = Image.FromHbitmap(hBitmap);
-            WinAPI.DeleteObject(hBitmap);
-
-
-        }
-
         private void startCapture() {
-            IntPtr fg_hWnd = WinAPI.GetForegroundWindow();
-            getScreenShot();
-
-            captureForm.Cursor = Cursors.Cross;
-            captureForm.showSelectForm(memoryImage, fg_hWnd, this);
-            WinAPI.SetForegroundWindow(captureForm.Handle);
+            Utils.startCapture(ref memoryImage, captureForm, this);
         }
 
         protected override void WndProc(ref Message m) {
+            // callback function to receive windows hotkey message
 
             switch (m.Msg) {
 
-                case WinAPI.WM_HOTKEY:
+                case Utils.WM_HOTKEY:
 
                     if (((int)m.LParam & 0x0000FFFF) ==
-                        ((int)WinAPI.ModifierKeys.MOD_CONTROL | (int)WinAPI.ModifierKeys.MOD_ALT)) {
+                        ((int)Utils.WinAPI_ModifierKeys.MOD_CONTROL | (int)Utils.WinAPI_ModifierKeys.MOD_ALT)) {
                         if ((int)m.LParam >> 16 == (int)Keys.A) {
                             startCapture();
-
 
                         }
                     }
@@ -95,7 +71,10 @@ namespace ScreenYu {
         }
 
         private void notifyIcon1_MouseClick(object sender, MouseEventArgs e) {
-            startCapture();
+            if (e.Button == MouseButtons.Left) {
+                startCapture();
+            }
+
         }
     }
     

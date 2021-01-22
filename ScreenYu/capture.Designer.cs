@@ -1,5 +1,5 @@
 ﻿namespace ScreenYu {
-    partial class capture {
+    partial class Capture {
         /// <summary>
         /// Required designer variable.
         /// </summary>
@@ -37,10 +37,10 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "capture";
-            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.capture_KeyDown);
-            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.capture_MouseDown);
-            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.capture_MouseMove);
-            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.capture_MouseUp);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Capture_KeyDown);
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Capture_MouseDown);
+            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Capture_MouseMove);
+            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Capture_MouseUp);
             this.ResumeLayout(false);
 
         }

@@ -5,7 +5,8 @@ using System.Text;
 using System.Runtime.InteropServices;
 
 namespace ScreenYu {
-    public static class WinAPI {
+    // public static class WinAPI {
+    public static partial class Utils {
         [DllImport("User32.dll")]
         public static extern IntPtr GetDC(IntPtr hWnd);
         [DllImport("Gdi32.dll")]
@@ -33,7 +34,7 @@ namespace ScreenYu {
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
         
         public const int WM_HOTKEY = 0x0312;
-        public enum ModifierKeys {
+        public enum WinAPI_ModifierKeys {
             MOD_ALT = 0x0001,
             MOD_CONTROL = 0x0002,
             MOD_NOREPEAT = 0x4000,

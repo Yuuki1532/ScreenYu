@@ -6,43 +6,57 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 
 namespace ScreenYu {
-    public partial class capture : Form {
+    public partial class Capture : Form {
 
         private struct RectFrame {
             public int x1, y1, x2, y2;
         }
-        private List<RectFrame> rectFrameList;
-        private Pen rectFramePen;
-        private Keys rectFrameKey = Keys.F; // press F to enter / leave rect frame drawing mode
-        private bool isDrawingRectFrame = false;
 
         private enum ControlPoints {
             None,
             LeftTop, Top, RightTop,
             Left, Inside, Right,
             LeftBottom, Bottom, RightBottom
-            
         }
+
+        private enum SelectionEditState {
+            NoSelection, // no selections yet
+            Selecting, // currently making a new selection
+            Selected, // a selection exists
+            DrawingRectFrame, // drawing rect frame mode
+            DrawingPath // drawing mode
+        }
+
         private const int CP_SENSITIVITY = 5;
+        private Keys rectFrameKey = Keys.F; // press F to enter / leave rect frame drawing mode
+        // private Keys drawKey = Keys.D; // press D to enter drawing mode
 
         private Bitmap screenShot;
-        private int x1 = -1, y1 = -1, x2 = -1, y2 = -1, old_x, old_y;
+        private IntPtr old_hWnd = IntPtr.Zero; // handle of last focus window
+
+        // private int x1 = -1, y1 = -1, x2 = -1, y2 = -1, old_x, old_y;
+        private int x1 = -1, y1, x2, y2, old_x, old_y;
         private bool isClicking = false;
+        private ControlPoints currentCP = ControlPoints.None;
+        private SelectionEditState state = SelectionEditState.NoSelection;
+
         private Pen selectionPen;
         private Pen drawingModePen;
         private Brush dimBrush;
         private Rectangle selectionRect;
-        private ControlPoints currentCP = ControlPoints.None;
-        private IntPtr old_hWnd = IntPtr.Zero;
+        private Pen rectFramePen;
+
+        private List<RectFrame> rectFrameList;
 
 
-        public capture() {
+        public Capture() {
             //SetProcessDPIAware();
             InitializeComponent();
+            
             this.Size = Screen.PrimaryScreen.Bounds.Size;
+            
             selectionPen = new Pen(Color.FromArgb(30,120,180), 1.5f);
             selectionPen.Alignment = System.Drawing.Drawing2D.PenAlignment.Center;
             dimBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0));
@@ -52,7 +66,30 @@ namespace ScreenYu {
             rectFramePen = new Pen(Color.FromArgb(255, 160, 0), 2.0f);
             drawingModePen = new Pen(Color.FromArgb(225, 20, 20), 1.5f);
         }
-        
+
+        public void showSelectForm(ref Bitmap b, IntPtr fg_hWnd, IWin32Window owner) {
+            x1 = -1;
+            isClicking = false;
+            currentCP = ControlPoints.None;
+            rectFrameList.Clear();
+            state = SelectionEditState.NoSelection;
+
+            screenShot = b;
+            old_hWnd = fg_hWnd;
+            this.Show(owner);
+        }
+        private void abortClip() {
+
+            screenShot.Dispose();
+            screenShot = null;
+            this.Hide();
+            if (old_hWnd != IntPtr.Zero)
+                Utils.SetForegroundWindow(old_hWnd);
+
+            //this.Owner.Show();
+
+        }
+
         protected override void OnPaint(PaintEventArgs e) {
             if (screenShot == null) return;
 
@@ -71,7 +108,7 @@ namespace ScreenYu {
                 g.DrawImage(screenShot, selectionRect, selectionRect, GraphicsUnit.Pixel);
                 
                 Pen borderPen;
-                if (isDrawingRectFrame)
+                if (state == SelectionEditState.DrawingRectFrame)
                     borderPen = drawingModePen;
                 else
                     borderPen = selectionPen;
@@ -94,22 +131,26 @@ namespace ScreenYu {
             base.OnPaint(e);
         }
 
-        private void capture_KeyDown(object sender, KeyEventArgs e) {
+        private void Capture_KeyDown(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.Escape) {
                 abortClip();
                 return;
             }
 
             if (e.KeyCode == rectFrameKey) {
-                if (x1 == -1)
+                if (state == SelectionEditState.NoSelection)
                     return;
                 if (isClicking)
                     return;
-                isDrawingRectFrame = !isDrawingRectFrame;
-                if (isDrawingRectFrame)
-                    this.Cursor = Cursors.Cross;
-                else
-                    this.Cursor = Cursors.SizeAll;
+
+                if (state == SelectionEditState.DrawingRectFrame) { // already in drawing rect frame mode
+                    state = SelectionEditState.Selected;
+                }
+                else {
+                    state = SelectionEditState.DrawingRectFrame;
+                }
+
+                this.Cursor = Cursors.Cross;
                 this.Refresh();
                 return;
             }
@@ -125,13 +166,13 @@ namespace ScreenYu {
 
         }
 
-        private void capture_MouseDown(object sender, MouseEventArgs e) {
-            int tx1, ty1, tx2, ty2;
+        private void Capture_MouseDown(object sender, MouseEventArgs e) {
+            int tx1, ty1, tx2, ty2; // tmp x, y
 
             if (e.Button == MouseButtons.Left) {
                 isClicking = true;
 
-                if (isDrawingRectFrame) {
+                if (state == SelectionEditState.DrawingRectFrame) { // is drawing rect frame
                     if (e.X < Math.Min(x1, x2) || e.X > Math.Max(x1, x2) || e.Y < Math.Min(y1, y2) || e.Y > Math.Max(y1, y2)) {
                         // start position out of range, cancel current clicking
                         isClicking = false;
@@ -142,10 +183,11 @@ namespace ScreenYu {
                     frame.y1 = e.Y;
                     rectFrameList.Add(frame);
                 }
-                else {
+                else { // selection
 
                     switch (currentCP) {
                         case ControlPoints.None: // first/re select
+                            state = SelectionEditState.Selecting;
                             rectFrameList.Clear();
                             x1 = x2 = old_x = e.X;
                             y1 = y2 = old_y = e.Y;
@@ -206,20 +248,21 @@ namespace ScreenYu {
             }
             else if (e.Button == MouseButtons.Right) {
 
-                if (x1 != -1) {
-                    commitClip();
-
+                if (state == SelectionEditState.NoSelection) {
+                    abortClip();
+                    return;
                 }
+
+                commitClip();
 
             }
         }
 
-        private void capture_MouseMove(object sender, MouseEventArgs e) {
-
+        private void Capture_MouseMove(object sender, MouseEventArgs e) {
 
 
             if (isClicking) {
-                if (isDrawingRectFrame) {
+                if (state == SelectionEditState.DrawingRectFrame) {
                     RectFrame frame = rectFrameList[rectFrameList.Count - 1];
                     if (e.X < Math.Min(x1, x2))
                         frame.x2 = Math.Min(x1, x2);
@@ -303,7 +346,7 @@ namespace ScreenYu {
 
 
                 //check if mouse clicked on control points
-                if (!isDrawingRectFrame && x1 != -1) { // not possible to clicked on cp if no selections yet
+                if (state == SelectionEditState.Selected) { // not possible to clicked on CP if no selections yet
                     currentCP = getControlPoint(e.X, e.Y);
                 }
 
@@ -319,12 +362,20 @@ namespace ScreenYu {
 
         }
 
-        private void capture_MouseUp(object sender, MouseEventArgs e) {
+        private void Capture_MouseUp(object sender, MouseEventArgs e) {
             isClicking = false;
 
-            if (x1 == x2 || y1 == y2) {
-                x1 = -1;
-                this.Refresh();
+            if (state == SelectionEditState.Selecting) {
+
+                if (x1 == x2 || y1 == y2) {
+                    // x1 = -1;
+                    state = SelectionEditState.NoSelection;
+                    this.Refresh();
+                }
+                else {
+                    state = SelectionEditState.Selected;
+                }
+
             }
 
             //x1 = x2 = y1 = y2 = -1;
@@ -361,27 +412,9 @@ namespace ScreenYu {
             abortClip();
         }
 
-        private void abortClip() {
-
-            screenShot.Dispose();
-            this.Hide();
-            if (old_hWnd != IntPtr.Zero)
-                WinAPI.SetForegroundWindow(old_hWnd);
-            
-            //this.Owner.Show();
         
-        }
 
-        public void showSelectForm(Bitmap b, IntPtr fg_hWnd, IWin32Window owner) {
-            x1 = -1;
-            currentCP = ControlPoints.None;
-            isDrawingRectFrame = false;
-            rectFrameList.Clear();
-
-            screenShot = b;
-            old_hWnd = fg_hWnd;
-            this.Show(owner);
-        }
+        
 
         private ControlPoints getControlPoint(int mouseX, int mouseY) {
             int minX, minY, maxX, maxY;
