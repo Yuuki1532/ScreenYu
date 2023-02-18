@@ -15,7 +15,7 @@ namespace ScreenYu {
             // SetProcessDPIAware();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            new Main();
+            new MainForm();
             Application.Run();
         }
     }

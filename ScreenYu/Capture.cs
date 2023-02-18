@@ -1,472 +1,227 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace ScreenYu {
-    public partial class Capture : Form {
+    public partial class CaptureForm {
 
-        private struct RectFrame {
-            public int x1, y1, x2, y2;
-        }
+        private const int CP_SENSITIVITY = 5;
+        private const Keys keyDrawRect = Keys.F; // press F to enter / leave Rect drawing mode
 
         private enum ControlPoints {
             None,
-            LeftTop, Top, RightTop,
+            TopLeft, Top, TopRight,
             Left, Inside, Right,
-            LeftBottom, Bottom, RightBottom
+            BottomLeft, Bottom, BottomRight,
         }
 
         private enum SelectionEditState {
-            NoSelection, // no selections yet
-            Selecting, // currently making a new selection
-            Selected, // a selection exists
-            DrawingRectFrame, // drawing rect frame mode
-            DrawingPath // drawing mode
+            NoSelection,        // no selections yet
+            Selecting,          // currently making a new selection
+            Selected,           // selection exists
+            EditingSelection,   // modifying selection
+            DrawingRectMode,    // drawing rect mode
+            DrawingRect,        // drawing rect
+            DrawingPath,        // drawing mode
         }
 
-        private const int CP_SENSITIVITY = 5;
-        private Keys rectFrameKey = Keys.F; // press F to enter / leave rect frame drawing mode
-        // private Keys drawKey = Keys.D; // press D to enter drawing mode
+        private class Selection {
+            public int x_anchor, y_anchor, x_cursor, y_cursor;  // selecting
+            public ControlPoints EditingCP;                     // modifying selection
+            public int x1, y1, x2, y2;                          // selection
+            public Pen SelectionPen;                                     // selection mode pen
+            public Brush SelectionBrush;                                 // selection dim brush
+            public Rectangle _rect;                             // reuse in OnPaint
 
-        private Bitmap screenShot;
-        private IntPtr old_hWnd = IntPtr.Zero; // handle of last focus window
+            public void SetSelectingVariables(int x_anchor, int y_anchor, int x_cursor, int y_cursor) {
+                this.x_anchor = x_anchor;
+                this.y_anchor = y_anchor;
+                this.x_cursor = x_cursor;
+                this.y_cursor = y_cursor;
+            }
 
-        // private int x1 = -1, y1 = -1, x2 = -1, y2 = -1, old_x, old_y;
-        private int x1 = -1, y1, x2, y2, old_x, old_y;
-        private bool isClicking = false;
-        private ControlPoints currentCP = ControlPoints.None;
-        private SelectionEditState state = SelectionEditState.NoSelection;
-
-        private Pen selectionPen;
-        private Pen drawingModePen;
-        private Brush dimBrush;
-        private Rectangle selectionRect;
-        private Pen rectFramePen;
-
-        private List<RectFrame> rectFrameList;
-
-
-        public Capture() {
-            //SetProcessDPIAware();
-            InitializeComponent();
-            
-            this.Size = Screen.PrimaryScreen.Bounds.Size;
-            
-            selectionPen = new Pen(Color.FromArgb(30,120,180), 1.5f);
-            selectionPen.Alignment = System.Drawing.Drawing2D.PenAlignment.Center;
-            dimBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0));
-            selectionRect = new Rectangle();
-
-            rectFrameList = new List<RectFrame>();
-            rectFramePen = new Pen(Color.FromArgb(255, 160, 0), 2.0f);
-            drawingModePen = new Pen(Color.FromArgb(225, 20, 20), 1.5f);
         }
 
-        public void showSelectForm(ref Bitmap b, IntPtr fg_hWnd, IWin32Window owner) {
-            x1 = -1;
-            isClicking = false;
-            currentCP = ControlPoints.None;
-            rectFrameList.Clear();
-            state = SelectionEditState.NoSelection;
-
-            screenShot = b;
-            old_hWnd = fg_hWnd;
-            this.Show(owner);
+        private class DrawingObjects {
+            public List<Drawing.Object> ObjectList;
+            public Dictionary<string, Pen> Pens;
+            public string CurrentPenId;
+            public Pen SelectionPen;
         }
-        private void abortClip() {
 
-            screenShot.Dispose();
-            screenShot = null;
-            this.Hide();
-            if (old_hWnd != IntPtr.Zero)
-                Utils.SetForegroundWindow(old_hWnd);
+        private Bitmap fullscreenBmp;
+        private IntPtr previousFg_hWnd = IntPtr.Zero; // handle of last focus window
+
+        private SelectionEditState seState;
+
+        private Selection selection;
+        private DrawingObjects drawingObjects;
+
+
+        private static void SetMinMax(ref int setThisToMin, ref int setThisToMax) {
+            if (setThisToMin > setThisToMax) {
+                var tmp = setThisToMin;
+                setThisToMin = setThisToMax;
+                setThisToMax = tmp;
+            }
+        }
+
+        private void GetFullscreenBmp(ref Bitmap fullscreenBmp) {
+            // Get current screenshot and save it to memoryImage
+
+            // Get the screen size the main form is on
+            int cx, cy;
+            cx = Screen.PrimaryScreen.Bounds.Width;
+            cy = Screen.PrimaryScreen.Bounds.Height;
+
+            // get desktop dc (0)
+            IntPtr hdcSrc = WinAPI.GetDC(IntPtr.Zero);
+            IntPtr hdcDest = WinAPI.CreateCompatibleDC(hdcSrc);
+            IntPtr hBitmap = WinAPI.CreateCompatibleBitmap(hdcSrc, cx, cy);
+            IntPtr hOld = WinAPI.SelectObject(hdcDest, hBitmap);
+
+            WinAPI.BitBlt(hdcDest, 0, 0, cx, cy, hdcSrc, 0, 0, (UInt32)CopyPixelOperation.SourceCopy);
+            WinAPI.SelectObject(hdcDest, hOld);
+            WinAPI.DeleteDC(hdcDest);
+            WinAPI.ReleaseDC(IntPtr.Zero, hdcSrc);
+
+            fullscreenBmp = Image.FromHbitmap(hBitmap);
+
+            WinAPI.DeleteObject(hBitmap);
+
+        }
+
+        public void StartCapture(ref Bitmap fullscreenBmp, IWin32Window owner) {
+            // save handle of (old) foreground window
+            IntPtr fg_hWnd = WinAPI.GetForegroundWindow();
+            GetFullscreenBmp(ref fullscreenBmp);
+
+            // show capture form
+            Size = fullscreenBmp.Size;
+            Cursor = Cursors.Cross;
+            ShowCaptureForm(fullscreenBmp, fg_hWnd, owner);
+            WinAPI.SetForegroundWindow(Handle);
+        }
+
+        private void ResetSelectionVariables() {
+            seState = SelectionEditState.NoSelection;
+            drawingObjects.ObjectList.Clear();
+        }
+
+        public void ShowCaptureForm(Bitmap bmp, IntPtr fg_hWnd, IWin32Window owner) {
+            ResetSelectionVariables();
+
+            fullscreenBmp = bmp;
+            previousFg_hWnd = fg_hWnd;
+            Show(owner);
+        }
+
+        private void EndCapture() {
+            fullscreenBmp.Dispose();
+            fullscreenBmp = null;
+            Hide();
+            if (previousFg_hWnd != IntPtr.Zero) {
+                WinAPI.SetForegroundWindow(previousFg_hWnd);
+            }
 
             //this.Owner.Show();
-
         }
 
-        protected override void OnPaint(PaintEventArgs e) {
-            if (screenShot == null) return;
+        private bool CommitCapture() {
 
-            Graphics g = e.Graphics;
-            g.DrawImage(screenShot, 0, 0);
-            g.FillRectangle(dimBrush, 0, 0, screenShot.Width, screenShot.Height);
-            
-            
-            if (x1 != -1) {
-                
-                selectionRect.X = Math.Min(x1, x2);
-                selectionRect.Y = Math.Min(y1, y2);
-                selectionRect.Width = Math.Abs(x2 - x1) + 1;
-                selectionRect.Height = Math.Abs(y2 - y1) + 1;
-
-                g.DrawImage(screenShot, selectionRect, selectionRect, GraphicsUnit.Pixel);
-                
-                Pen borderPen;
-                if (state == SelectionEditState.DrawingRectFrame)
-                    borderPen = drawingModePen;
-                else
-                    borderPen = selectionPen;
-
-                g.DrawRectangle(borderPen,
-                    Math.Min(x1, x2), Math.Min(y1, y2), Math.Abs(x2 - x1), Math.Abs(y2 - y1));
-
-                foreach (RectFrame frame in rectFrameList) {
-                    g.DrawRectangle(rectFramePen,
-                        Math.Min(frame.x1, frame.x2), Math.Min(frame.y1, frame.y2),
-                        Math.Abs(frame.x2 - frame.x1), Math.Abs(frame.y2 - frame.y1));
-                }
-                
-
+            if (seState == SelectionEditState.NoSelection) {
+                EndCapture();
+                return false;
             }
 
+            SetMinMax(ref selection.x1, ref selection.x2);
+            SetMinMax(ref selection.y1, ref selection.y2);
 
-
-
-            base.OnPaint(e);
-        }
-
-        private void Capture_KeyDown(object sender, KeyEventArgs e) {
-            if (e.KeyCode == Keys.Escape) {
-                abortClip();
-                return;
-            }
-
-            if (e.KeyCode == rectFrameKey) {
-                if (state == SelectionEditState.NoSelection)
-                    return;
-                if (isClicking)
-                    return;
-
-                if (state == SelectionEditState.DrawingRectFrame) { // already in drawing rect frame mode
-                    state = SelectionEditState.Selected;
-                }
-                else {
-                    state = SelectionEditState.DrawingRectFrame;
-                }
-
-                this.Cursor = Cursors.Cross;
-                this.Refresh();
-                return;
-            }
-
-            if (e.Control && e.KeyCode == Keys.Z){
-                if (isClicking)
-                    return;
-                if (rectFrameList.Count == 0)
-                    return;
-                rectFrameList.RemoveAt(rectFrameList.Count - 1);
-                this.Refresh();
-            }
-
-        }
-
-        private void Capture_MouseDown(object sender, MouseEventArgs e) {
-            int tx1, ty1, tx2, ty2; // tmp x, y
-
-            if (e.Button == MouseButtons.Left) {
-                isClicking = true;
-
-                if (state == SelectionEditState.DrawingRectFrame) { // is drawing rect frame
-                    if (e.X < Math.Min(x1, x2) || e.X > Math.Max(x1, x2) || e.Y < Math.Min(y1, y2) || e.Y > Math.Max(y1, y2)) {
-                        // start position out of range, cancel current clicking
-                        isClicking = false;
-                        return;
-                    }
-                    RectFrame frame = new RectFrame();
-                    frame.x1 = e.X;
-                    frame.y1 = e.Y;
-                    rectFrameList.Add(frame);
-                }
-                else { // selection
-
-                    switch (currentCP) {
-                        case ControlPoints.None: // first/re select
-                            state = SelectionEditState.Selecting;
-                            rectFrameList.Clear();
-                            x1 = x2 = old_x = e.X;
-                            y1 = y2 = old_y = e.Y;
-                            break;
-                        case ControlPoints.Top:
-                        case ControlPoints.Left:
-                        case ControlPoints.LeftTop: // modifying selection
-                            tx2 = Math.Min(x1, x2);
-                            ty2 = Math.Min(y1, y2);
-                            tx1 = Math.Max(x1, x2);
-                            ty1 = Math.Max(y1, y2);
-                            x1 = tx1;
-                            y1 = ty1;
-                            x2 = tx2;
-                            y2 = ty2;
-                            break;
-                        case ControlPoints.Bottom:
-                        case ControlPoints.Right:
-                        case ControlPoints.RightBottom:
-                            tx2 = Math.Max(x1, x2);
-                            ty2 = Math.Max(y1, y2);
-                            tx1 = Math.Min(x1, x2);
-                            ty1 = Math.Min(y1, y2);
-                            x1 = tx1;
-                            y1 = ty1;
-                            x2 = tx2;
-                            y2 = ty2;
-                            break;
-                        case ControlPoints.LeftBottom:
-                            tx2 = Math.Min(x1, x2);
-                            ty2 = Math.Max(y1, y2);
-                            tx1 = Math.Max(x1, x2);
-                            ty1 = Math.Min(y1, y2);
-                            x1 = tx1;
-                            y1 = ty1;
-                            x2 = tx2;
-                            y2 = ty2;
-                            break;
-                        case ControlPoints.RightTop:
-                            tx2 = Math.Max(x1, x2);
-                            ty2 = Math.Min(y1, y2);
-                            tx1 = Math.Min(x1, x2);
-                            ty1 = Math.Max(y1, y2);
-                            x1 = tx1;
-                            y1 = ty1;
-                            x2 = tx2;
-                            y2 = ty2;
-                            break;
-                        case ControlPoints.Inside:
-                            old_x = e.X;
-                            old_y = e.Y;
-                            break;
-                    }
-
-
-                }
-
-            }
-            else if (e.Button == MouseButtons.Right) {
-
-                if (state == SelectionEditState.NoSelection) {
-                    abortClip();
-                    return;
-                }
-
-                commitClip();
-
-            }
-        }
-
-        private void Capture_MouseMove(object sender, MouseEventArgs e) {
-
-
-            if (isClicking) {
-                if (state == SelectionEditState.DrawingRectFrame) {
-                    RectFrame frame = rectFrameList[rectFrameList.Count - 1];
-                    if (e.X < Math.Min(x1, x2))
-                        frame.x2 = Math.Min(x1, x2);
-                    else if (e.X > Math.Max(x1, x2))
-                        frame.x2 = Math.Max(x1, x2);
-                    else
-                        frame.x2 = e.X;
-
-                    if (e.Y < Math.Min(y1, y2))
-                        frame.y2 = Math.Min(y1, y2);
-                    else if (e.Y > Math.Max(y1, y2))
-                        frame.y2 = Math.Max(y1, y2);
-                    else
-                        frame.y2 = e.Y;
-                    rectFrameList[rectFrameList.Count - 1] = frame;
-                }
-                else if (currentCP == ControlPoints.None) { // first/re select
-                    /*x2 += e.X - old_x;
-                    y2 += e.Y - old_y;
-                    old_x = e.X;
-                    old_y = e.Y;*/
-                    x2 = e.X;
-                    y2 = e.Y;
-                }
-                else { // modifying selection
-                    if (currentCP == ControlPoints.LeftTop ||
-                        currentCP == ControlPoints.LeftBottom ||
-                        currentCP == ControlPoints.RightTop ||
-                        currentCP == ControlPoints.RightBottom) {
-
-                        x2 = e.X;
-                        y2 = e.Y;
-                    }
-
-                    else if (currentCP == ControlPoints.Left ||
-                            currentCP == ControlPoints.Right) {
-
-                        x2 = e.X;
-                    }
-                    else if (currentCP == ControlPoints.Top ||
-                            currentCP == ControlPoints.Bottom) {
-
-                        y2 = e.Y;
-                    }
-                    else if (currentCP == ControlPoints.Inside) {
-                        int dx, dy, minX, minY, maxX, maxY;
-                        dx = e.X - old_x;
-                        dy = e.Y - old_y;
-                        minX = Math.Min(x1, x2);
-                        minY = Math.Min(y1, y2);
-                        maxX = Math.Max(x1, x2);
-                        maxY = Math.Max(y1, y2);
-
-                        if (minX + dx < 0) {
-                            dx = -minX;
-                        }
-                        else if (maxX + dx >= screenShot.Width) {
-                            dx = screenShot.Width - maxX - 1;
-                        }
-
-                        if (minY + dy < 0) {
-                            dy = -minY;
-                        }
-                        else if (maxY + dy >= screenShot.Height) {
-                            dy = screenShot.Height - maxY - 1;
-                        }
-
-                        x1 += dx;
-                        y1 += dy;
-                        x2 += dx;
-                        y2 += dy;
-                        old_x = e.X;
-                        old_y = e.Y;
-                    }
-
-
-                }
-                this.Refresh();
-            }
-            else { // mouse left button not clicking
-
-
-                //check if mouse clicked on control points
-                if (state == SelectionEditState.Selected) { // not possible to clicked on CP if no selections yet
-                    currentCP = getControlPoint(e.X, e.Y);
-                }
-
-
-            }
-
-
-
-
-
-
-            //this.Refresh();
-
-        }
-
-        private void Capture_MouseUp(object sender, MouseEventArgs e) {
-            isClicking = false;
-
-            if (state == SelectionEditState.Selecting) {
-
-                if (x1 == x2 || y1 == y2) {
-                    // x1 = -1;
-                    state = SelectionEditState.NoSelection;
-                    this.Refresh();
-                }
-                else {
-                    state = SelectionEditState.Selected;
-                }
-
-            }
-
-            //x1 = x2 = y1 = y2 = -1;
-            //x1 = -1;
-            
-        }
-
-        private void commitClip() {
-
-            if (Math.Min(x1, x2) < 0 || Math.Min(y1, y2) < 0 ||
-                Math.Max(x1, x2) >= screenShot.Width || Math.Max(y1, y2) >= screenShot.Height) {
+            if (selection.x1 < 0 ||
+                selection.y1 < 0 ||
+                selection.x2 >= fullscreenBmp.Width ||
+                selection.y2 >= fullscreenBmp.Height) {
 
                 MessageBox.Show("Selection out of range!", "Error");
-                return;
+                EndCapture();
+                return false;
             }
 
 
+            using (Graphics g = Graphics.FromImage(fullscreenBmp)) {
 
-            using (Graphics g = Graphics.FromImage(screenShot)) {
-
-                foreach (RectFrame frame in rectFrameList) {
-                    g.DrawRectangle(rectFramePen,
-                        Math.Min(frame.x1, frame.x2), Math.Min(frame.y1, frame.y2),
-                        Math.Abs(frame.x2 - frame.x1), Math.Abs(frame.y2 - frame.y1));
+                foreach (Drawing.Rect rect in drawingObjects.ObjectList) {
+                    g.DrawRectangle(drawingObjects.Pens[rect.penId],
+                        Math.Min(rect.x1, rect.x2), Math.Min(rect.y1, rect.y2),
+                        Math.Abs(rect.x2 - rect.x1), Math.Abs(rect.y2 - rect.y1));
                 }
 
             }
-            
 
-            Clipboard.SetImage(screenShot.Clone(
-                new Rectangle(Math.Min(x1, x2), Math.Min(y1, y2),
-                    Math.Abs(x2 - x1) + 1, Math.Abs(y2 - y1) + 1), screenShot.PixelFormat));
 
-            abortClip();
+            Clipboard.SetImage(fullscreenBmp.Clone(
+                new Rectangle(selection.x1, selection.y1,
+                    selection.x2 - selection.x1 + 1, selection.y2 - selection.y1 + 1),
+                fullscreenBmp.PixelFormat));
+
+            EndCapture();
+            return true;
         }
 
-        
+        private ControlPoints SetCursor(int mouseX, int mouseY) {
 
-        
+            int
+                minX = Math.Min(selection.x1, selection.x2),
+                minY = Math.Min(selection.y1, selection.y2),
+                maxX = Math.Max(selection.x1, selection.x2),
+                maxY = Math.Max(selection.y1, selection.y2);
 
-        private ControlPoints getControlPoint(int mouseX, int mouseY) {
-            int minX, minY, maxX, maxY;
-            int d_minX, d_minY, d_maxX, d_maxY;
-            bool isInside, isInsideHeightSens, isInsideWidthSens;
+            bool
+                isInMinX = Math.Abs(mouseX - minX) <= CP_SENSITIVITY,
+                isInMinY = Math.Abs(mouseY - minY) <= CP_SENSITIVITY,
+                isInMaxX = Math.Abs(mouseX - maxX) <= CP_SENSITIVITY,
+                isInMaxY = Math.Abs(mouseY - maxY) <= CP_SENSITIVITY,
+                isInWidth = minX < mouseX && mouseX < maxX,
+                isInHeight = minY < mouseY && mouseY < maxY,
+                isInsideSelection = mouseX > minX && mouseX < maxX && mouseY > minY && mouseY < maxY;
 
-            minX = Math.Min(x1, x2);
-            minY = Math.Min(y1, y2);
-            maxX = Math.Max(x1, x2);
-            maxY = Math.Max(y1, y2);
 
-            d_minX = Math.Abs(mouseX - minX);
-            d_minY = Math.Abs(mouseY - minY);
-            d_maxX = Math.Abs(mouseX - maxX);
-            d_maxY = Math.Abs(mouseY - maxY);
-            isInside = (mouseX > minX && mouseX < maxX && mouseY > minY && mouseY < maxY);
-            isInsideWidthSens = (mouseX >= minX - CP_SENSITIVITY && mouseX <= maxX + CP_SENSITIVITY);
-            isInsideHeightSens = (mouseY >= minY - CP_SENSITIVITY && mouseY <= maxY + CP_SENSITIVITY);
-
-            if (d_maxX <= CP_SENSITIVITY && d_maxY <= CP_SENSITIVITY) { // right bottom
+            if (isInMinY && isInMinX) { // top left
                 this.Cursor = Cursors.SizeNWSE;
-                return ControlPoints.RightBottom;
+                return ControlPoints.TopLeft;
             }
-            else if (d_maxX <= CP_SENSITIVITY && d_minY <= CP_SENSITIVITY) { // right top
+            else if (isInMinY && isInMaxX) { // top right
                 this.Cursor = Cursors.SizeNESW;
-                return ControlPoints.RightTop;
+                return ControlPoints.TopRight;
             }
-            else if (d_minX <= CP_SENSITIVITY && d_maxY <= CP_SENSITIVITY) { // left bottom
+            else if (isInMaxY && isInMinX) { // bottom left
                 this.Cursor = Cursors.SizeNESW;
-                return ControlPoints.LeftBottom;
+                return ControlPoints.BottomLeft;
             }
-            else if (d_minX <= CP_SENSITIVITY && d_minY <= CP_SENSITIVITY) { // left top
+            else if (isInMaxY && isInMaxX) { // bottom right
                 this.Cursor = Cursors.SizeNWSE;
-                return ControlPoints.LeftTop;
+                return ControlPoints.BottomRight;
             }
-            else if (isInsideHeightSens && d_maxX <= CP_SENSITIVITY) { // right
-                this.Cursor = Cursors.SizeWE;
-                return ControlPoints.Right;
-            }
-            else if (isInsideWidthSens && d_maxY <= CP_SENSITIVITY) { // bottom
-                this.Cursor = Cursors.SizeNS;
-                return ControlPoints.Bottom;
-            }
-            else if (isInsideHeightSens && d_minX <= CP_SENSITIVITY) { // left
-                this.Cursor = Cursors.SizeWE;
-                return ControlPoints.Left;
-            }
-            else if (isInsideWidthSens && d_minY <= CP_SENSITIVITY) { // top
+            else if (isInMinY && isInWidth) { // top
                 this.Cursor = Cursors.SizeNS;
                 return ControlPoints.Top;
             }
-            else if (isInside) { // inside
+            else if (isInMaxY && isInWidth) { // bottom
+                this.Cursor = Cursors.SizeNS;
+                return ControlPoints.Bottom;
+            }
+            else if (isInMinX && isInHeight) { // left
+                this.Cursor = Cursors.SizeWE;
+                return ControlPoints.Left;
+            }
+            else if (isInMaxX && isInHeight) { // right
+                this.Cursor = Cursors.SizeWE;
+                return ControlPoints.Right;
+            }
+            else if (isInsideSelection) { // inside
                 this.Cursor = Cursors.SizeAll;
                 return ControlPoints.Inside;
             }

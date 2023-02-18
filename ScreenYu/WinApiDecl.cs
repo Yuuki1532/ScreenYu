@@ -5,8 +5,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 
 namespace ScreenYu {
-    // public static class WinAPI {
-    public static partial class Utils {
+    public static partial class WinAPI {
         [DllImport("User32.dll")]
         public static extern IntPtr GetDC(IntPtr hWnd);
         [DllImport("Gdi32.dll")]
@@ -17,7 +16,7 @@ namespace ScreenYu {
         public static extern IntPtr SelectObject(IntPtr hdc, IntPtr h);
         [DllImport("Gdi32.dll")]
         public static extern bool BitBlt(IntPtr hdc, int x, int y,
-            int cx, int cy, IntPtr hdcSrc, int x1, int y1, UInt32 rop);
+            int cx, int cy, IntPtr hdcSrc, int x1, int y1, uint rop);
         [DllImport("Gdi32.dll")]
         public static extern bool DeleteDC(IntPtr hdc);
         [DllImport("User32.dll")]
@@ -29,12 +28,12 @@ namespace ScreenYu {
         [DllImport("User32.dll")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("User32.dll")]
-        public static extern bool RegisterHotKey(IntPtr hWnd, int id, UInt32 fsModifiers, UInt32 vk);
+        public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
         [DllImport("User32.dll")]
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
         
         public const int WM_HOTKEY = 0x0312;
-        public enum WinAPI_ModifierKeys {
+        public enum ModifierKeys {
             MOD_ALT = 0x0001,
             MOD_CONTROL = 0x0002,
             MOD_NOREPEAT = 0x4000,
