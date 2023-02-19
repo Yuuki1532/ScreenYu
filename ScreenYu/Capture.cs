@@ -9,7 +9,11 @@ namespace ScreenYu {
     public partial class CaptureForm {
 
         private const int CP_SENSITIVITY = 5;
-        private const Keys keyDrawRect = Keys.F; // press F to enter / leave Rect drawing mode
+        private const Keys keyDrawRect = Keys.F; // press F to enter Rect drawing mode
+        private const Keys keySelect = Keys.S; // press F to enter selection mode
+
+        private const float minDrawingStrokeSize = 1f;
+        private const float maxDrawingStrokeSize = 6f;
 
         private enum ControlPoints {
             None,
@@ -32,8 +36,8 @@ namespace ScreenYu {
             public int x_anchor, y_anchor, x_cursor, y_cursor;  // selecting
             public ControlPoints EditingCP;                     // modifying selection
             public int x1, y1, x2, y2;                          // selection
-            public Pen SelectionPen;                                     // selection mode pen
-            public Brush SelectionBrush;                                 // selection dim brush
+            public Pen SelectionPen;                            // selection mode pen
+            public Brush SelectionBrush;                        // selection dim brush
             public Rectangle _rect;                             // reuse in OnPaint
 
             public void SetSelectingVariables(int x_anchor, int y_anchor, int x_cursor, int y_cursor) {
@@ -47,9 +51,10 @@ namespace ScreenYu {
 
         private class DrawingObjects {
             public List<Drawing.Object> ObjectList;
-            public Dictionary<string, Pen> Pens;
-            public string CurrentPenId;
-            public Pen SelectionPen;
+            public List<Color> ColorList;
+            public int CurrentColorId;
+            public float CurrentStrokeSize;
+            public Pen _pen; // reuse in OnPaint
         }
 
         private Bitmap fullscreenBmp;
@@ -153,10 +158,8 @@ namespace ScreenYu {
 
             using (Graphics g = Graphics.FromImage(fullscreenBmp)) {
 
-                foreach (Drawing.Rect rect in drawingObjects.ObjectList) {
-                    g.DrawRectangle(drawingObjects.Pens[rect.penId],
-                        Math.Min(rect.x1, rect.x2), Math.Min(rect.y1, rect.y2),
-                        Math.Abs(rect.x2 - rect.x1), Math.Abs(rect.y2 - rect.y1));
+                foreach (Drawing.Object obj in drawingObjects.ObjectList) {
+                    obj.PaintTo(g, drawingObjects._pen);
                 }
 
             }

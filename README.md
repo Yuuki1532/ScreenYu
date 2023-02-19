@@ -5,10 +5,14 @@
 
 ## Feature
 
-- hotkey: `Ctrl - Alt - A`
-- resizable selection
-- `esc` to quit capture mode
-- `right click` to copy the selection
-- `F` to toggle rectangle drawing mode
-- `Ctrl - Z` to undo the most recent drawing
-
+- Start capturing: `Ctrl` + `Alt` + `A`
+- Selection Mode
+	- Initial selection: `Left Mouse Down` -> `Mouse Move` -> `Left Mouse Up`
+	- Cancel capturing: `Esc` 
+	- Copy the selection to clipboard: `Right Mouse Click`
+	- Resize selection mode: (Default) or `S`
+- Drawing Mode
+	- Rectangle drawing mode: `F`
+	- Change stroke color: `0` to `9`
+	- Change stroke size: `Mouse Wheel Up` to increase, `Mouse Wheel Down` to decrease
+	- Undo the most recent drawing: `Ctrl` + `Z`
