@@ -13,6 +13,8 @@
 	- Resize selection mode: (Default) or `S`
 - Drawing Mode
 	- Rectangle drawing mode: `F`
+	- Line drawing mode: `C`
+		- Toggle horizontal or vertical straight lines: Hold `Shift`
 	- Change stroke color: `0` to `9`
 	- Change stroke size: `Mouse Wheel Up` to increase, `Mouse Wheel Down` to decrease
 	- Undo the most recent drawing: `Ctrl` + `Z`

@@ -10,6 +10,7 @@ namespace ScreenYu {
 
         private const int CP_SENSITIVITY = 5;
         private const Keys keyDrawRect = Keys.F; // press F to enter Rect drawing mode
+        private const Keys keyDrawLine = Keys.C; // press C to enter Line drawing mode
         private const Keys keySelect = Keys.S; // press F to enter selection mode
 
         private const float minDrawingStrokeSize = 1f;
@@ -27,9 +28,14 @@ namespace ScreenYu {
             Selecting,          // currently making a new selection
             Selected,           // selection exists
             EditingSelection,   // modifying selection
+
+            DrawingMode = 8,    // any drawing mode has this bit set
             DrawingRectMode,    // drawing rect mode
+            DrawingLineMode,    // drawing line mode
+
+            Drawing = 16,       // any drawing has this bit set
             DrawingRect,        // drawing rect
-            DrawingPath,        // drawing mode
+            DrawingLine,        // drawing line
         }
 
         private class Selection {
