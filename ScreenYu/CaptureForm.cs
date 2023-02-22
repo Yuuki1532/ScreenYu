@@ -15,29 +15,46 @@ namespace ScreenYu {
             InitializeComponent();
             MouseWheel += CaptureForm_MouseWheel;
 
+            //selection = new Selection() {
+            //    SelectionPen = new Pen(Color.FromArgb(30, 120, 180), 1f) {
+            //        Alignment = System.Drawing.Drawing2D.PenAlignment.Center,
+            //    },
+            //    SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0)),
+            //    _rect = new Rectangle(),
+            //};
+
             selection = new Selection() {
-                SelectionPen = new Pen(Color.FromArgb(30, 120, 180), 1.0f) {
-                    Alignment = System.Drawing.Drawing2D.PenAlignment.Center
+                SelectionPen = new Pen(Config.Selection.SelectionBorderColor, Config.Selection.SelectionBorderStrokeSize) {
+                    Alignment = System.Drawing.Drawing2D.PenAlignment.Center,
                 },
-                SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0)),
+                SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(Config.Selection.DimOutsideSelection * 255), 0, 0, 0)),
                 _rect = new Rectangle(),
             };
 
+            //drawingObjects = new DrawingObjects() {
+            //    ObjectList = new List<Drawing.Object>(),
+            //    ColorList = new List<Color>() {
+            //        Color.FromArgb(255, 160, 0), // default
+            //        Color.FromArgb(230, 30, 30),
+            //        Color.FromArgb(255, 160, 0),
+            //        Color.FromArgb(32, 250, 90),
+            //        Color.FromArgb(40, 90, 250),
+            //        Color.FromArgb(170, 40, 250),
+            //    },
+            //    CurrentColorId = 0,
+            //    CurrentStrokeSize = 2f,
+            //};
+            //drawingObjects._pen = new Pen(drawingObjects.ColorList[drawingObjects.CurrentColorId], drawingObjects.CurrentStrokeSize);
+
+
+
             drawingObjects = new DrawingObjects() {
                 ObjectList = new List<Drawing.Object>(),
-                ColorList = new List<Color>() {
-                    Color.FromArgb(255, 160, 0), // default
-                    Color.FromArgb(230, 30, 30),
-                    Color.FromArgb(255, 160, 0),
-                    Color.FromArgb(32, 250, 90),
-                    Color.FromArgb(40, 90, 250),
-                    Color.FromArgb(170, 40, 250),
-                },
-                CurrentColorId = 0,
-                CurrentStrokeSize = 2.0f,
+                ColorList = Config.Drawing.ColorList,
+                CurrentColorId = Config.Drawing.DefaultColorId,
+                CurrentStrokeSize = Config.Drawing.DefaultStrokeSize,
             };
             drawingObjects._pen = new Pen(drawingObjects.ColorList[drawingObjects.CurrentColorId], drawingObjects.CurrentStrokeSize);
-
 
         }
 
@@ -109,11 +126,11 @@ namespace ScreenYu {
         }
 
         private void CaptureForm_KeyDown(object sender, KeyEventArgs e) {
-            if (e.KeyCode == Keys.Escape) {
+            if (e.KeyCode == Config.KeyBinding.Cancel) {
                 EndCapture();
                 return;
             }
-            else if (e.KeyCode == keySelect) {
+            else if (e.KeyCode == Config.KeyBinding.Select) {
                 if ((seState & SelectionEditState.DrawingMode) > 0) {
                     seState = SelectionEditState.Selected;
                 }
@@ -123,7 +140,7 @@ namespace ScreenYu {
 
                 Cursor = Cursors.Cross;
             }
-            else if (e.KeyCode == keyDrawRect) {
+            else if (e.KeyCode == Config.KeyBinding.DrawRect) {
                 if (seState == SelectionEditState.Selected || (seState & SelectionEditState.DrawingMode) > 0) {
                     seState = SelectionEditState.DrawingRectMode;
                 }
@@ -133,7 +150,7 @@ namespace ScreenYu {
 
                 Cursor = Cursors.Cross;
             }
-            else if (e.KeyCode == keyDrawLine) {
+            else if (e.KeyCode == Config.KeyBinding.DrawLine) {
                 if (seState == SelectionEditState.Selected || (seState & SelectionEditState.DrawingMode) > 0) {
                     seState = SelectionEditState.DrawingLineMode;
                 }
@@ -388,10 +405,10 @@ namespace ScreenYu {
         private void CaptureForm_MouseWheel(object sender, MouseEventArgs e) {
             if ((seState & SelectionEditState.DrawingMode) > 0) {
                 if (e.Delta > 0) { // away from user
-                    drawingObjects.CurrentStrokeSize = Math.Min(drawingObjects.CurrentStrokeSize + 1, maxDrawingStrokeSize);
+                    drawingObjects.CurrentStrokeSize = Math.Min(drawingObjects.CurrentStrokeSize + 1, Config.Drawing.MaxStrokeSize);
                 }
                 else {
-                    drawingObjects.CurrentStrokeSize = Math.Max(minDrawingStrokeSize, drawingObjects.CurrentStrokeSize - 1);
+                    drawingObjects.CurrentStrokeSize = Math.Max(Config.Drawing.MinStrokeSize, drawingObjects.CurrentStrokeSize - 1);
                 }
                 Refresh();
 

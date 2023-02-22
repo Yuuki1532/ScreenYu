@@ -11,8 +11,8 @@ namespace ScreenYu {
     public partial class MainForm : Form {
 
         // pre-defined hotkey
-        private const uint hotKeyModifiers = (uint) WinAPI.ModifierKeys.MOD_CONTROL | (uint) WinAPI.ModifierKeys.MOD_ALT;
-        private const uint hotKeyKey = (uint) Keys.A;
+        // private const uint hotKeyModifiers = (uint) WinAPI.ModifierKeys.MOD_CONTROL | (uint) WinAPI.ModifierKeys.MOD_ALT;
+        // private const uint hotKeyKey = (uint) Keys.A;
         private const int hotKeyId = 0;
 
         private CaptureForm captureForm;
@@ -21,9 +21,31 @@ namespace ScreenYu {
         public MainForm() {
             InitializeComponent();
 
+
+            uint hotKeyModifiers = (uint)WinAPI.ModifierKeys.MOD_NOREPEAT;
+            string hotKeyInString = "";
+            if (Config.HotKey.WinKey) { 
+                hotKeyModifiers |= (uint)WinAPI.ModifierKeys.MOD_WIN;
+                hotKeyInString += "Win-";
+            }
+            if (Config.HotKey.Control) {
+                hotKeyModifiers |= (uint)WinAPI.ModifierKeys.MOD_CONTROL;
+                hotKeyInString += "Ctrl-";
+            }
+            if (Config.HotKey.Alt) {
+                hotKeyModifiers |= (uint)WinAPI.ModifierKeys.MOD_ALT;
+                hotKeyInString += "Alt-";
+            }
+            if (Config.HotKey.Shift) {
+                hotKeyModifiers |= (uint)WinAPI.ModifierKeys.MOD_SHIFT;
+                hotKeyInString += "Shift-";
+            }
+            hotKeyInString += Enum.GetName(typeof(Keys), Config.HotKey.Key);
+
+
             // register hotkey to Windows
-            if (!WinAPI.RegisterHotKey(Handle, hotKeyId, hotKeyModifiers, hotKeyKey)) {
-                MessageBox.Show("Unable to register for hotkey: Ctrl-Alt-A !", "Error");
+            if (!WinAPI.RegisterHotKey(Handle, hotKeyId, hotKeyModifiers, Config.HotKey.Key)) {
+                MessageBox.Show($"Unable to register for hotkey: {hotKeyInString}!", "Error");
                 Environment.Exit(-1);
             }
 
@@ -39,25 +61,24 @@ namespace ScreenYu {
             Application.Exit();
         }
 
-        private void StartCapture() {
-            captureForm.StartCapture(ref fullscreenBmp, this);
-        }
-
         protected override void WndProc(ref Message m) {
             // callback function to receive windows hotkey message
-
+            
             switch (m.Msg) {
 
                 case WinAPI.WM_HOTKEY:
 
-                    if (((int)m.LParam & 0x0000FFFF) ==
-                        ((int)WinAPI.ModifierKeys.MOD_CONTROL | (int)WinAPI.ModifierKeys.MOD_ALT)) {
-                        if ((int)m.LParam >> 16 == (int)Keys.A) {
-                            captureForm.StartCapture(ref fullscreenBmp, this);
+                    //if (((int)m.LParam & 0x0000FFFF) ==
+                    //    ((int)WinAPI.ModifierKeys.MOD_CONTROL | (int)WinAPI.ModifierKeys.MOD_ALT)) {
+                    //    if ((int)m.LParam >> 16 == (int)Keys.A) {
+                    //        captureForm.StartCapture(ref fullscreenBmp, this);
 
-                        }
-                    }
+                    //    }
+                    //}
 
+                    // since only one hotkey is registered, no need to check
+
+                    captureForm.StartCapture(ref fullscreenBmp, this);
                     break;
             }
             base.WndProc(ref m);

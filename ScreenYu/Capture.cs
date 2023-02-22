@@ -9,12 +9,12 @@ namespace ScreenYu {
     public partial class CaptureForm {
 
         private const int CP_SENSITIVITY = 5;
-        private const Keys keyDrawRect = Keys.F; // press F to enter Rect drawing mode
-        private const Keys keyDrawLine = Keys.C; // press C to enter Line drawing mode
-        private const Keys keySelect = Keys.S; // press F to enter selection mode
+        //private const Keys keyDrawRect = Keys.F; // press F to enter Rect drawing mode
+        //private const Keys keyDrawLine = Keys.C; // press C to enter Line drawing mode
+        //private const Keys keySelect = Keys.S; // press F to enter selection mode
 
-        private const float minDrawingStrokeSize = 1f;
-        private const float maxDrawingStrokeSize = 6f;
+        //private const float minDrawingStrokeSize = 1f;
+        //private const float maxDrawingStrokeSize = 6f;
 
         private enum ControlPoints {
             None,
@@ -106,6 +106,11 @@ namespace ScreenYu {
         }
 
         public void StartCapture(ref Bitmap fullscreenBmp, IWin32Window owner) {
+
+            if (Visible) { // already in capture mode
+                return;
+            }
+
             // save handle of (old) foreground window
             IntPtr fg_hWnd = WinAPI.GetForegroundWindow();
             GetFullscreenBmp(ref fullscreenBmp);
