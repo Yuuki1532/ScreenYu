@@ -1,27 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-
-namespace ScreenYu {
+﻿namespace ScreenYu {
     public partial class CaptureForm : Form {
 
         public CaptureForm() {
-            //SetProcessDPIAware();
             InitializeComponent();
             MouseWheel += CaptureForm_MouseWheel;
-
-            //selection = new Selection() {
-            //    SelectionPen = new Pen(Color.FromArgb(30, 120, 180), 1f) {
-            //        Alignment = System.Drawing.Drawing2D.PenAlignment.Center,
-            //    },
-            //    SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(0.3 * 255), 0, 0, 0)),
-            //    _rect = new Rectangle(),
-            //};
 
             selection = new Selection() {
                 SelectionPen = new Pen(Config.Selection.SelectionBorderColor, Config.Selection.SelectionBorderStrokeSize) {
@@ -30,22 +12,6 @@ namespace ScreenYu {
                 SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(Config.Selection.DimOutsideSelection * 255), 0, 0, 0)),
                 _rect = new Rectangle(),
             };
-
-            //drawingObjects = new DrawingObjects() {
-            //    ObjectList = new List<Drawing.Object>(),
-            //    ColorList = new List<Color>() {
-            //        Color.FromArgb(255, 160, 0), // default
-            //        Color.FromArgb(230, 30, 30),
-            //        Color.FromArgb(255, 160, 0),
-            //        Color.FromArgb(32, 250, 90),
-            //        Color.FromArgb(40, 90, 250),
-            //        Color.FromArgb(170, 40, 250),
-            //    },
-            //    CurrentColorId = 0,
-            //    CurrentStrokeSize = 2f,
-            //};
-            //drawingObjects._pen = new Pen(drawingObjects.ColorList[drawingObjects.CurrentColorId], drawingObjects.CurrentStrokeSize);
-
 
 
             drawingObjects = new DrawingObjects() {
@@ -56,8 +22,8 @@ namespace ScreenYu {
             };
             drawingObjects._pen = new Pen(drawingObjects.ColorList[drawingObjects.CurrentColorId], drawingObjects.CurrentStrokeSize);
 
-        }
 
+        }
 
         protected override void OnPaint(PaintEventArgs e) {
             if (fullscreenBmp == null) return;
@@ -102,7 +68,7 @@ namespace ScreenYu {
                 // g.DrawImage(fullscreenBmp, selection._rect, selection._rect, GraphicsUnit.Pixel);
 
                 Pen borderPen;
-                
+
                 if ((seState & SelectionEditState.DrawingMode) > 0 ||
                     (seState & SelectionEditState.Drawing) > 0) {
                     drawingObjects._pen.Color = drawingObjects.ColorList[drawingObjects.CurrentColorId];
@@ -270,6 +236,7 @@ namespace ScreenYu {
             else if (e.Button == MouseButtons.Right) {
                 CommitCapture();
             }
+
         }
 
         private void CaptureForm_MouseMove(object sender, MouseEventArgs e) {
@@ -366,7 +333,7 @@ namespace ScreenYu {
                     currentLine.x2 = e.X;
                     currentLine.y2 = e.Y;
                 }
-                
+
             }
 
             Refresh();
@@ -399,7 +366,6 @@ namespace ScreenYu {
                 seState = (seState ^ SelectionEditState.Drawing) | SelectionEditState.DrawingMode;
             }
 
-
         }
 
         private void CaptureForm_MouseWheel(object sender, MouseEventArgs e) {
@@ -415,7 +381,6 @@ namespace ScreenYu {
             }
 
         }
-
 
 
     }

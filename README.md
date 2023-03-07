@@ -1,7 +1,8 @@
 # ScreenYu (Screen Capture by Yuuki1532)
 
 ## Requirement
-- .Net Framework 4.7.2
+- Windows 10 or later
+- .NET 6.0
 
 ## Feature
 

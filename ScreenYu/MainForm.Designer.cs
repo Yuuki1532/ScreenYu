@@ -1,14 +1,14 @@
 ﻿namespace ScreenYu {
     partial class MainForm {
         /// <summary>
-        /// 設計工具所需的變數。
+        ///  Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
         /// <summary>
-        /// 清除任何使用中的資源。
+        ///  Clean up any resources being used.
         /// </summary>
-        /// <param name="disposing">如果應該處置 Managed 資源則為 true，否則為 false。</param>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing) {
             if (disposing && (components != null)) {
                 components.Dispose();
@@ -16,65 +16,58 @@
             base.Dispose(disposing);
         }
 
-        #region Windows Form 設計工具產生的程式碼
+        #region Windows Form Designer generated code
 
         /// <summary>
-        /// 此為設計工具支援所需的方法 - 請勿使用程式碼編輯器
-        /// 修改這個方法的內容。
+        ///  Required method for Designer support - do not modify
+        ///  the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.mainNotifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
-            this.mainNotifyIconContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.mainNotifyIconContextMenuStrip.SuspendLayout();
-            this.SuspendLayout();
+            mainNotifyIcon = new NotifyIcon(components);
+            mainNotifyIconContextMenuStrip = new ContextMenuStrip(components);
+            exitToolStripMenuItem = new ToolStripMenuItem();
+            mainNotifyIconContextMenuStrip.SuspendLayout();
+            SuspendLayout();
             // 
             // mainNotifyIcon
             // 
-            this.mainNotifyIcon.ContextMenuStrip = this.mainNotifyIconContextMenuStrip;
-            this.mainNotifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("mainNotifyIcon.Icon")));
-            this.mainNotifyIcon.Text = "ScreenYu";
-            this.mainNotifyIcon.Visible = true;
-            this.mainNotifyIcon.MouseClick += new System.Windows.Forms.MouseEventHandler(this.mainNotifyIcon_MouseClick);
+            mainNotifyIcon.ContextMenuStrip = mainNotifyIconContextMenuStrip;
+            mainNotifyIcon.Icon = (Icon)resources.GetObject("mainNotifyIcon.Icon");
+            mainNotifyIcon.Text = "mainNotifyIcon";
+            mainNotifyIcon.Visible = true;
+            mainNotifyIcon.MouseClick += mainNotifyIcon_MouseClick;
             // 
             // mainNotifyIconContextMenuStrip
             // 
-            this.mainNotifyIconContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.exitToolStripMenuItem});
-            this.mainNotifyIconContextMenuStrip.Name = "contextMenuStrip1";
-            this.mainNotifyIconContextMenuStrip.Size = new System.Drawing.Size(95, 26);
+            mainNotifyIconContextMenuStrip.Items.AddRange(new ToolStripItem[] { exitToolStripMenuItem });
+            mainNotifyIconContextMenuStrip.Name = "mainNotifyIconContextMenuStrip";
+            mainNotifyIconContextMenuStrip.Size = new Size(95, 26);
             // 
             // exitToolStripMenuItem
             // 
-            this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(94, 22);
-            this.exitToolStripMenuItem.Text = "Exit";
-            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            exitToolStripMenuItem.Size = new Size(94, 22);
+            exitToolStripMenuItem.Text = "Exit";
+            exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(184, 146);
-            this.Margin = new System.Windows.Forms.Padding(2);
-            this.Name = "MainForm";
-            this.Text = "main";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
-            this.mainNotifyIconContextMenuStrip.ResumeLayout(false);
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(184, 161);
+            Name = "MainForm";
+            Text = "main";
+            FormClosed += MainForm_FormClosed;
+            mainNotifyIconContextMenuStrip.ResumeLayout(false);
+            ResumeLayout(false);
         }
 
         #endregion
 
-        private System.Windows.Forms.NotifyIcon mainNotifyIcon;
-        private System.Windows.Forms.ContextMenuStrip mainNotifyIconContextMenuStrip;
-        private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-
-
+        private NotifyIcon mainNotifyIcon;
+        private ContextMenuStrip mainNotifyIconContextMenuStrip;
+        private ToolStripMenuItem exitToolStripMenuItem;
     }
 }
-

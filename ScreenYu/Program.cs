@@ -1,21 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-
-namespace ScreenYu {
-    static class Program {
-        //[System.Runtime.InteropServices.DllImport("User32.dll")]
-        //private static extern bool SetProcessDPIAware();
-
+namespace ScreenYu
+{
+    internal static class Program {
         /// <summary>
-        /// 應用程式的主要進入點。
+        ///  The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main() {
-            // SetProcessDPIAware();
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            // To customize application configuration such as set high DPI settings or default font,
+            // see https://aka.ms/applicationconfiguration.
+            ApplicationConfiguration.Initialize();
             new MainForm();
             Application.Run();
         }

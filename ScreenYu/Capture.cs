@@ -1,20 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Drawing;
-using System.Windows.Forms;
-
-namespace ScreenYu {
+﻿namespace ScreenYu {
     public partial class CaptureForm {
 
         private const int CP_SENSITIVITY = 5;
-        //private const Keys keyDrawRect = Keys.F; // press F to enter Rect drawing mode
-        //private const Keys keyDrawLine = Keys.C; // press C to enter Line drawing mode
-        //private const Keys keySelect = Keys.S; // press F to enter selection mode
-
-        //private const float minDrawingStrokeSize = 1f;
-        //private const float maxDrawingStrokeSize = 6f;
 
         private enum ControlPoints {
             None,

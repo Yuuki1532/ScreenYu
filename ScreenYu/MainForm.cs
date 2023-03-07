@@ -1,18 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-
 namespace ScreenYu {
     public partial class MainForm : Form {
 
-        // pre-defined hotkey
-        // private const uint hotKeyModifiers = (uint) WinAPI.ModifierKeys.MOD_CONTROL | (uint) WinAPI.ModifierKeys.MOD_ALT;
-        // private const uint hotKeyKey = (uint) Keys.A;
         private const int hotKeyId = 0;
 
         private CaptureForm captureForm;
@@ -21,10 +9,9 @@ namespace ScreenYu {
         public MainForm() {
             InitializeComponent();
 
-
             uint hotKeyModifiers = (uint)WinAPI.ModifierKeys.MOD_NOREPEAT;
             string hotKeyInString = "";
-            if (Config.HotKey.WinKey) { 
+            if (Config.HotKey.WinKey) {
                 hotKeyModifiers |= (uint)WinAPI.ModifierKeys.MOD_WIN;
                 hotKeyInString += "Win-";
             }
@@ -52,7 +39,7 @@ namespace ScreenYu {
             // create Bitmap of the screen size the main form is on
             fullscreenBmp = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             captureForm = new CaptureForm();
-            
+
             mainNotifyIcon.Visible = true;
         }
 
@@ -63,7 +50,7 @@ namespace ScreenYu {
 
         protected override void WndProc(ref Message m) {
             // callback function to receive windows hotkey message
-            
+
             switch (m.Msg) {
 
                 case WinAPI.WM_HOTKEY:
@@ -84,14 +71,8 @@ namespace ScreenYu {
             base.WndProc(ref m);
         }
 
-        protected override bool ShowWithoutActivation {
-            get {
-                return true;
-            }
-        }
-
         private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
-            this.Close();
+            Close();
         }
 
         private void mainNotifyIcon_MouseClick(object sender, MouseEventArgs e) {
@@ -100,7 +81,12 @@ namespace ScreenYu {
             }
         }
 
+        protected override bool ShowWithoutActivation {
+            get {
+                return true;
+            }
+        }
+
 
     }
-    
 }
