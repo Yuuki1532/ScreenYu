@@ -33,6 +33,14 @@
             public Brush SelectionBrush;                        // selection dim brush
             public Rectangle _rect;                             // reuse in OnPaint
 
+            public Selection() {
+                SelectionPen = new Pen(Config.Selection.SelectionBorderColor, Config.Selection.SelectionBorderStrokeSize) {
+                    Alignment = System.Drawing.Drawing2D.PenAlignment.Center,
+                };
+                SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(Config.Selection.DimOutsideSelection * 255), 0, 0, 0));
+                _rect = new Rectangle();
+            }
+
             public void SetSelectingVariables(int x_anchor, int y_anchor, int x_cursor, int y_cursor) {
                 this.x_anchor = x_anchor;
                 this.y_anchor = y_anchor;
@@ -47,16 +55,23 @@
             public List<Color> ColorList;
             public int CurrentColorId;
             public float CurrentStrokeSize;
-            public Pen _pen; // reuse in OnPaint
+
+            public DrawingObjects() {
+                ObjectList = new List<Drawing.Object>();
+                ColorList = Config.Drawing.ColorList;
+                CurrentColorId = Config.Drawing.DefaultColorId;
+                CurrentStrokeSize = Config.Drawing.DefaultStrokeSize;
+            }
+
         }
 
-        private Bitmap fullscreenBmp;
+        private Bitmap? fullscreenBmp;
         private IntPtr previousFg_hWnd = IntPtr.Zero; // handle of last focus window
 
         private SelectionEditState seState;
 
-        private Selection selection;
-        private DrawingObjects drawingObjects;
+        private Selection selection = new();
+        private DrawingObjects drawingObjects = new();
 
 
         private static void SetMinMax(ref int setThisToMin, ref int setThisToMax) {
@@ -67,7 +82,7 @@
             }
         }
 
-        private void GetFullscreenBmp(ref Bitmap fullscreenBmp) {
+        private static void GetFullscreenBmp(ref Bitmap fullscreenBmp) {
             // Get current screenshot and save it to memoryImage
 
             // Get the screen size the main form is on
@@ -123,7 +138,7 @@
         }
 
         private void EndCapture() {
-            fullscreenBmp.Dispose();
+            fullscreenBmp!.Dispose(); // fullscreenBmp is guaranteed non-null during capturing
             fullscreenBmp = null;
             Hide();
             if (previousFg_hWnd != IntPtr.Zero) {
@@ -145,8 +160,8 @@
 
             if (selection.x1 < 0 ||
                 selection.y1 < 0 ||
-                selection.x2 >= fullscreenBmp.Width ||
-                selection.y2 >= fullscreenBmp.Height) {
+                selection.x2 >= fullscreenBmp!.Width ||
+                selection.y2 >= fullscreenBmp!.Height) { // fullscreenBmp is guaranteed non-null during capturing
 
                 MessageBox.Show("Selection out of range!", "Error");
                 EndCapture();
@@ -157,7 +172,7 @@
             using (Graphics g = Graphics.FromImage(fullscreenBmp)) {
 
                 foreach (Drawing.Object obj in drawingObjects.ObjectList) {
-                    obj.PaintTo(g, drawingObjects._pen);
+                    obj.PaintTo(g);
                 }
 
             }

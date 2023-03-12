@@ -4,25 +4,6 @@
         public CaptureForm() {
             InitializeComponent();
             MouseWheel += CaptureForm_MouseWheel;
-
-            selection = new Selection() {
-                SelectionPen = new Pen(Config.Selection.SelectionBorderColor, Config.Selection.SelectionBorderStrokeSize) {
-                    Alignment = System.Drawing.Drawing2D.PenAlignment.Center,
-                },
-                SelectionBrush = new SolidBrush(Color.FromArgb(Convert.ToInt32(Config.Selection.DimOutsideSelection * 255), 0, 0, 0)),
-                _rect = new Rectangle(),
-            };
-
-
-            drawingObjects = new DrawingObjects() {
-                ObjectList = new List<Drawing.Object>(),
-                ColorList = Config.Drawing.ColorList,
-                CurrentColorId = Config.Drawing.DefaultColorId,
-                CurrentStrokeSize = Config.Drawing.DefaultStrokeSize,
-            };
-            drawingObjects._pen = new Pen(drawingObjects.ColorList[drawingObjects.CurrentColorId], drawingObjects.CurrentStrokeSize);
-
-
         }
 
         protected override void OnPaint(PaintEventArgs e) {
@@ -67,22 +48,21 @@
 
                 // g.DrawImage(fullscreenBmp, selection._rect, selection._rect, GraphicsUnit.Pixel);
 
-                Pen borderPen;
 
                 if ((seState & SelectionEditState.DrawingMode) > 0 ||
                     (seState & SelectionEditState.Drawing) > 0) {
-                    drawingObjects._pen.Color = drawingObjects.ColorList[drawingObjects.CurrentColorId];
-                    drawingObjects._pen.Width = drawingObjects.CurrentStrokeSize;
-                    borderPen = drawingObjects._pen;
+                    selection.SelectionPen.Color = drawingObjects.ColorList[drawingObjects.CurrentColorId];
+                    selection.SelectionPen.Width = drawingObjects.CurrentStrokeSize;
                 }
                 else {
-                    borderPen = selection.SelectionPen;
+                    selection.SelectionPen.Color = Config.Selection.SelectionBorderColor;
+                    selection.SelectionPen.Width = Config.Selection.SelectionBorderStrokeSize;
                 }
 
-                g.DrawRectangle(borderPen, minX, minY, maxX - minX, maxY - minY);
+                g.DrawRectangle(selection.SelectionPen, minX, minY, maxX - minX, maxY - minY);
 
                 foreach (Drawing.Object obj in drawingObjects.ObjectList) {
-                    obj.PaintTo(g, drawingObjects._pen);
+                    obj.PaintTo(g);
                 }
 
             }
@@ -157,16 +137,16 @@
 
                 if (seState == SelectionEditState.NoSelection) { // no selection
                     seState = SelectionEditState.Selecting;
-                    selection.x1 = e.X;
-                    selection.y1 = e.Y;
+                    selection.x1 = selection.x2 = e.X;
+                    selection.y1 = selection.y2 = e.Y;
                 }
                 else if (seState == SelectionEditState.Selected) { // has selection
                     var cp = SetCursor(e.X, e.Y);
 
                     if (cp == ControlPoints.None) { // new selection
                         seState = SelectionEditState.Selecting;
-                        selection.x1 = e.X;
-                        selection.y1 = e.Y;
+                        selection.x1 = selection.x2 = e.X;
+                        selection.y1 = selection.y2 = e.Y;
                     }
                     else { // edit selection
                         seState = SelectionEditState.EditingSelection;
@@ -289,7 +269,7 @@
                         selection.x2 = selectionWidth;
                     }
                     // check if right margin out of range
-                    else if (selection.x2 >= fullscreenBmp.Width) {
+                    else if (selection.x2 >= fullscreenBmp!.Width) { // fullscreenBmp is guaranteed non-null during capturing
                         selection.x2 = fullscreenBmp.Width - 1;
                         selection.x1 = selection.x2 - selectionWidth;
                     }
@@ -300,7 +280,7 @@
                         selection.y2 = selectionHeight;
                     }
                     // check if bottom margin out of range
-                    else if (selection.y2 >= fullscreenBmp.Height) {
+                    else if (selection.y2 >= fullscreenBmp!.Height) { // fullscreenBmp is guaranteed non-null during capturing
                         selection.y2 = fullscreenBmp.Height - 1;
                         selection.y1 = selection.y2 - selectionHeight;
                     }
@@ -368,7 +348,7 @@
 
         }
 
-        private void CaptureForm_MouseWheel(object sender, MouseEventArgs e) {
+        private void CaptureForm_MouseWheel(object? sender, MouseEventArgs e) {
             if ((seState & SelectionEditState.DrawingMode) > 0) {
                 if (e.Delta > 0) { // away from user
                     drawingObjects.CurrentStrokeSize = Math.Min(drawingObjects.CurrentStrokeSize + 1, Config.Drawing.MaxStrokeSize);

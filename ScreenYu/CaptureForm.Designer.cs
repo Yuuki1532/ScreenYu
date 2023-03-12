@@ -35,7 +35,7 @@
             Name = "CaptureForm";
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
-            Text = "CaptureForm";
+            Text = "ScreenYu";
             KeyDown += CaptureForm_KeyDown;
             MouseDown += CaptureForm_MouseDown;
             MouseMove += CaptureForm_MouseMove;

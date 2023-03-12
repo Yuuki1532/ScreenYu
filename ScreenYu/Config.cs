@@ -2,10 +2,10 @@
 
     public static class Config {
 
-        public static DrawingConfig Drawing = new DrawingConfig();
-        public static KeyBindingConfig KeyBinding = new KeyBindingConfig();
-        public static HotKeyConfig HotKey = new HotKeyConfig();
-        public static SelectionConfig Selection = new SelectionConfig();
+        public static DrawingConfig Drawing = new();
+        public static KeyBindingConfig KeyBinding = new();
+        public static readonly HotKeyConfig HotKey = new();
+        public static SelectionConfig Selection = new();
 
     }
 
@@ -46,7 +46,7 @@
 
     public class HotKeyConfig {
 
-        public readonly bool WinKey = false;
+        public bool WinKey = false;
         public bool Shift = false;
         public bool Alt = true;
         public bool Control = true;
