@@ -7,8 +7,10 @@
 ## Feature
 
 - Start capturing: `Ctrl` + `Alt` + `A`
+- Reset selection and drawings: `R`
 - Selection Mode
 	- Initial selection: `Left Mouse Down` -> `Mouse Move` -> `Left Mouse Up`
+	- Select fullscreen: `Left Mouse Double-Click`
 	- Cancel capturing: `Esc` 
 	- Copy the selection to clipboard: `Right Mouse Click`
 	- Resize selection mode: (Default) or `S`

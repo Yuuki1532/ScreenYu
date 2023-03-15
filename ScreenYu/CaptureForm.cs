@@ -76,6 +76,15 @@
                 EndCapture();
                 return;
             }
+            if (e.KeyCode == Config.KeyBinding.Reset) {
+
+                drawingObjects.ObjectList.Clear();
+                seState = SelectionEditState.NoSelection;
+                Cursor = Cursors.Cross;
+
+                Refresh();
+                return;
+            }
             else if (e.KeyCode == Config.KeyBinding.Select) {
                 if ((seState & SelectionEditState.DrawingMode) > 0) {
                     seState = SelectionEditState.Selected;
@@ -292,12 +301,12 @@
 
             }
             else if (seState == SelectionEditState.DrawingRect) {
-                Drawing.Rect currentRect = (Drawing.Rect)drawingObjects.ObjectList[drawingObjects.ObjectList.Count - 1];
+                Drawing.Rect currentRect = (Drawing.Rect)drawingObjects.ObjectList[^1];
                 currentRect.x2 = e.X;
                 currentRect.y2 = e.Y;
             }
             else if (seState == SelectionEditState.DrawingLine) {
-                Drawing.Line currentLine = (Drawing.Line)drawingObjects.ObjectList[drawingObjects.ObjectList.Count - 1];
+                Drawing.Line currentLine = (Drawing.Line)drawingObjects.ObjectList[^1];
 
                 if (ModifierKeys == Keys.Shift) { // straight line
                     if (Math.Abs(e.X - currentLine.x1) >= Math.Abs(e.Y - currentLine.y1)) { // horizontal
@@ -322,30 +331,50 @@
 
         private void CaptureForm_MouseUp(object sender, MouseEventArgs e) {
 
-            if (seState == SelectionEditState.Selecting ||
-                seState == SelectionEditState.EditingSelection) {
+            if (e.Button == MouseButtons.Left) {
 
-                if (selection.x1 == selection.x2 ||
-                    selection.y1 == selection.y2) {
-                    seState = SelectionEditState.NoSelection;
+                if (seState == SelectionEditState.Selecting ||
+                    seState == SelectionEditState.EditingSelection) {
+
+                    if (selection.x1 == selection.x2 ||
+                        selection.y1 == selection.y2) {
+                        seState = SelectionEditState.NoSelection;
+                        Refresh();
+                    }
+                    else {
+                        seState = SelectionEditState.Selected;
+                    }
+
+                }
+                else if ((seState & SelectionEditState.Drawing) > 0) {
+                    Drawing.Object currentObject = drawingObjects.ObjectList[^1];
+
+                    if (currentObject.IsEmpty()) {
+                        // empty object, remove it
+                        drawingObjects.ObjectList.RemoveAt(drawingObjects.ObjectList.Count - 1);
+                    }
+
+                    seState = (seState ^ SelectionEditState.Drawing) | SelectionEditState.DrawingMode;
+                }
+
+            }
+
+        }
+
+        private void CaptureForm_MouseDoubleClick(object sender, MouseEventArgs e) {
+
+            if (e.Button == MouseButtons.Left) {
+
+                if ((seState & SelectionEditState.Drawing) == 0) { // not drawing, double-click
+                    // select all
+                    selection.x1 = selection.y1 = 0;
+                    selection.x2 = fullscreenBmp!.Width - 1;
+                    selection.y2 = fullscreenBmp!.Height - 1;
+                    seState = SelectionEditState.Selected;
                     Refresh();
                 }
-                else {
-                    seState = SelectionEditState.Selected;
-                }
 
             }
-            else if ((seState & SelectionEditState.Drawing) > 0) {
-                Drawing.Object currentObject = drawingObjects.ObjectList[drawingObjects.ObjectList.Count - 1];
-
-                if (currentObject.IsEmpty()) {
-                    // empty object, remove it
-                    drawingObjects.ObjectList.RemoveAt(drawingObjects.ObjectList.Count - 1);
-                }
-
-                seState = (seState ^ SelectionEditState.Drawing) | SelectionEditState.DrawingMode;
-            }
-
         }
 
         private void CaptureForm_MouseWheel(object? sender, MouseEventArgs e) {
@@ -361,7 +390,6 @@
             }
 
         }
-
 
     }
 }

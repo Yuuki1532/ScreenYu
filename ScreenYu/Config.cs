@@ -41,6 +41,7 @@
         public Keys DrawRect = Keys.F;
         public Keys DrawLine = Keys.C;
         public Keys Select = Keys.S;
+        public Keys Reset = Keys.R;
 
     }
 

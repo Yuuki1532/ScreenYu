@@ -37,6 +37,7 @@
             StartPosition = FormStartPosition.Manual;
             Text = "ScreenYu";
             KeyDown += CaptureForm_KeyDown;
+            MouseDoubleClick += CaptureForm_MouseDoubleClick;
             MouseDown += CaptureForm_MouseDown;
             MouseMove += CaptureForm_MouseMove;
             MouseUp += CaptureForm_MouseUp;
