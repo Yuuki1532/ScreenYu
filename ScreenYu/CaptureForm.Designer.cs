@@ -27,16 +27,19 @@
             // 
             // CaptureForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleDimensions = new SizeF(21F, 44F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(200, 200);
+            ClientSize = new Size(600, 586);
             DoubleBuffered = true;
+            Font = new Font("Microsoft JhengHei UI", 26.25F, FontStyle.Regular, GraphicsUnit.Point);
             FormBorderStyle = FormBorderStyle.None;
+            Margin = new Padding(9, 9, 9, 9);
             Name = "CaptureForm";
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
             Text = "ScreenYu";
             KeyDown += CaptureForm_KeyDown;
+            KeyUp += CaptureForm_KeyUp;
             MouseDoubleClick += CaptureForm_MouseDoubleClick;
             MouseDown += CaptureForm_MouseDown;
             MouseMove += CaptureForm_MouseMove;

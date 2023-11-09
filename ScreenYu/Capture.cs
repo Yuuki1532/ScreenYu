@@ -69,6 +69,17 @@
         private IntPtr previousFg_hWnd = IntPtr.Zero; // handle of last focus window
 
         private SelectionEditState seState;
+        private bool showHint = false; // show hint (e.g., key bindings) on screen
+
+        private string hintString = string.Format(
+            "Cancel: {0}\nReset: {1}\n\nMode: Selection: {2}\n\nMode: Drawing\n\tRectangle: {3}\n\tLine: {4}\n\tStroke Color: 0 to 9\n\tStroke Size: Mouse Wheel Up/Down\n\tUndo: Ctrl-Z",
+            Config.KeyBinding.Cancel,
+            Config.KeyBinding.Reset,
+            Config.KeyBinding.Select,
+            Config.KeyBinding.DrawRect,
+            Config.KeyBinding.DrawLine
+        );
+
 
         private Selection selection = new();
         private DrawingObjects drawingObjects = new();

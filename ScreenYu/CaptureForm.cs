@@ -67,6 +67,9 @@
 
             }
 
+            if (showHint) {
+                g.DrawString(hintString, Font, new SolidBrush(Color.LightGray), new Point(50, 50));
+            }
 
             base.OnPaint(e);
         }
@@ -83,6 +86,15 @@
                 Cursor = Cursors.Cross;
 
                 Refresh();
+                return;
+            }
+            else if (e.KeyCode == Config.KeyBinding.ShowHint) {
+
+                if (!showHint) {
+                    showHint = true;
+                    Refresh();
+                }
+
                 return;
             }
             else if (e.KeyCode == Config.KeyBinding.Select) {
@@ -391,5 +403,14 @@
 
         }
 
+        private void CaptureForm_KeyUp(object sender, KeyEventArgs e) {
+            if (e.KeyCode == Config.KeyBinding.ShowHint) {
+
+                showHint = false;
+
+                Refresh();
+                return;
+            }
+        }
     }
 }

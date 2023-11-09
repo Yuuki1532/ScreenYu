@@ -42,6 +42,7 @@
         public Keys DrawLine = Keys.C;
         public Keys Select = Keys.S;
         public Keys Reset = Keys.R;
+        public Keys ShowHint = Keys.Tab;
 
     }
 

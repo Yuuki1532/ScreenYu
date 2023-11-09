@@ -7,6 +7,7 @@
 ## Feature
 
 - Start capturing: `Ctrl` + `Alt` + `A`
+- Show key bindings: `Tab` (Hold)
 - Reset selection and drawings: `R`
 - Selection Mode
 	- Initial selection: `Left Mouse Down` -> `Mouse Move` -> `Left Mouse Up`
