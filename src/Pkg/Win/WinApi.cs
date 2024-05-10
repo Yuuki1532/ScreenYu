@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace ScreenYu {
-    public static partial class WinAPI {
+namespace ScreenYu.Pkg.Win {
+    internal static class WinApi {
         [DllImport("User32.dll")]
         public static extern IntPtr GetDC(IntPtr hWnd);
         [DllImport("Gdi32.dll")]
@@ -11,30 +11,29 @@ namespace ScreenYu {
         [DllImport("Gdi32.dll")]
         public static extern IntPtr SelectObject(IntPtr hdc, IntPtr h);
         [DllImport("Gdi32.dll")]
-        public static extern bool BitBlt(IntPtr hdc, int x, int y,
-            int cx, int cy, IntPtr hdcSrc, int x1, int y1, uint rop);
+        public static extern int BitBlt(IntPtr hdc, int x, int y, int cx, int cy, IntPtr hdcSrc, int x1, int y1, uint rop);
         [DllImport("Gdi32.dll")]
-        public static extern bool DeleteDC(IntPtr hdc);
+        public static extern int DeleteDC(IntPtr hdc);
         [DllImport("User32.dll")]
         public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
         [DllImport("Gdi32.dll")]
-        public static extern bool DeleteObject(IntPtr ho);
+        public static extern int DeleteObject(IntPtr ho);
         [DllImport("User32.dll")]
         public static extern IntPtr GetForegroundWindow();
         [DllImport("User32.dll")]
-        public static extern bool SetForegroundWindow(IntPtr hWnd);
+        public static extern int SetForegroundWindow(IntPtr hWnd);
         [DllImport("User32.dll")]
-        public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+        public static extern int RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
         [DllImport("User32.dll")]
-        public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        public static extern int UnregisterHotKey(IntPtr hWnd, int id);
 
         public const int WM_HOTKEY = 0x0312;
-        public enum ModifierKeys {
-            MOD_ALT = 0x0001,
-            MOD_CONTROL = 0x0002,
-            MOD_NOREPEAT = 0x4000,
-            MOD_SHIFT = 0x0004,
-            MOD_WIN = 0x0008
+        public enum ModifierKeys : uint {
+            Alt = 0x0001,
+            Control = 0x0002,
+            NoRepeat = 0x4000,
+            Shift = 0x0004,
+            Win = 0x0008,
         }
     }
 }

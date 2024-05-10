@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StartupObject>ScreenYu.Program</StartupObject>
+    <ApplicationIcon>assets\icon\SysTray.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>DpiUnaware</ApplicationHighDpiMode>
+    <Authors>Yuuki</Authors>
+    <Company>Yuuki</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="assets\icon\SysTray.ico" />
+  </ItemGroup>
+
+</Project>
