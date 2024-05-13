@@ -64,7 +64,6 @@ namespace ScreenYu.App {
                 ctx.SharedContext().Form.Refresh();
             }
             private void DrawRectMode(Handler.Context.I ctx, KeyEventArgs e) {
-                ctx.Abort();
                 ctx.SharedContext().Mode = Handler.Common.Mode.DrawRect;
                 ctx.SharedContext().Form.Refresh();
             }

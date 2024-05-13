@@ -7,11 +7,13 @@ namespace ScreenYu.Handler.Manager {
             private readonly FormEvent FormEvent;
             private readonly Manager Manager;
             private SharedContext _sharedContext;
+            private EventArgs EventArgs;
 
-            public Ctx(Manager manager, FormEvent formEvent, SharedContext sharedContext) {
+            public Ctx(Manager manager, FormEvent formEvent, SharedContext sharedContext, EventArgs eventArgs) {
                 Manager = manager;
                 FormEvent = formEvent;
                 _sharedContext = sharedContext;
+                EventArgs = eventArgs;
             }
 
             public SharedContext SharedContext() {
@@ -21,7 +23,11 @@ namespace ScreenYu.Handler.Manager {
                 Manager.HandlerIdxDict[FormEvent] = Manager.HandlerList.Count;
             }
             public void Next() {
-                throw new NotImplementedException();
+                Manager.HandlerIdxDict[FormEvent]++;
+                while (Manager.HandlerIdxDict[FormEvent] < Manager.HandlerList.Count) {
+                    Manager.Dispatch(FormEvent, this, EventArgs);
+                    Manager.HandlerIdxDict[FormEvent]++;
+                }
             }
         }
 
@@ -39,40 +45,43 @@ namespace ScreenYu.Handler.Manager {
         }
 
         private void Handle(FormEvent formEvent, EventArgs eventArg) {
-            var ctx = new Ctx(this, formEvent, SharedContext!);
+            var ctx = new Ctx(this, formEvent, SharedContext!, eventArg);
             HandlerIdxDict[formEvent] = 0;
 
             while (HandlerIdxDict[formEvent] < HandlerList.Count) {
-                switch (formEvent) {
-                    case FormEvent.MouseDown:
-                        HandlerList[HandlerIdxDict[formEvent]].MouseDown(ctx, (MouseEventArgs)eventArg);
-                        break;
-                    case FormEvent.MouseUp:
-                        HandlerList[HandlerIdxDict[formEvent]].MouseUp(ctx, (MouseEventArgs)eventArg);
-                        break;
-                    case FormEvent.MouseMove:
-                        HandlerList[HandlerIdxDict[formEvent]].MouseMove(ctx, (MouseEventArgs)eventArg);
-                        break;
-                    case FormEvent.MouseDoubleClick:
-                        HandlerList[HandlerIdxDict[formEvent]].MouseDoubleClick(ctx, (MouseEventArgs)eventArg);
-                        break;
-                    case FormEvent.MouseWheel:
-                        HandlerList[HandlerIdxDict[formEvent]].MouseWheel(ctx, (MouseEventArgs)eventArg);
-                        break;
-                    case FormEvent.KeyDown:
-                        HandlerList[HandlerIdxDict[formEvent]].KeyDown(ctx, (KeyEventArgs)eventArg);
-                        break;
-                    case FormEvent.KeyUp:
-                        HandlerList[HandlerIdxDict[formEvent]].KeyUp(ctx, (KeyEventArgs)eventArg);
-                        break;
-                    case FormEvent.Paint:
-                        HandlerList[HandlerIdxDict[formEvent]].Paint(ctx, (PaintEventArgs)eventArg);
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
-
+                Dispatch(formEvent, ctx, eventArg);
                 HandlerIdxDict[formEvent]++;
+            }
+        }
+
+        private void Dispatch(FormEvent formEvent, Ctx ctx, EventArgs eventArg) {
+            switch (formEvent) {
+                case FormEvent.MouseDown:
+                    HandlerList[HandlerIdxDict[formEvent]].MouseDown(ctx, (MouseEventArgs)eventArg);
+                    break;
+                case FormEvent.MouseUp:
+                    HandlerList[HandlerIdxDict[formEvent]].MouseUp(ctx, (MouseEventArgs)eventArg);
+                    break;
+                case FormEvent.MouseMove:
+                    HandlerList[HandlerIdxDict[formEvent]].MouseMove(ctx, (MouseEventArgs)eventArg);
+                    break;
+                case FormEvent.MouseDoubleClick:
+                    HandlerList[HandlerIdxDict[formEvent]].MouseDoubleClick(ctx, (MouseEventArgs)eventArg);
+                    break;
+                case FormEvent.MouseWheel:
+                    HandlerList[HandlerIdxDict[formEvent]].MouseWheel(ctx, (MouseEventArgs)eventArg);
+                    break;
+                case FormEvent.KeyDown:
+                    HandlerList[HandlerIdxDict[formEvent]].KeyDown(ctx, (KeyEventArgs)eventArg);
+                    break;
+                case FormEvent.KeyUp:
+                    HandlerList[HandlerIdxDict[formEvent]].KeyUp(ctx, (KeyEventArgs)eventArg);
+                    break;
+                case FormEvent.Paint:
+                    HandlerList[HandlerIdxDict[formEvent]].Paint(ctx, (PaintEventArgs)eventArg);
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
         }
 
